@@ -8,6 +8,22 @@ A local spaced-repetition app for learning 50 major drug targets, the signalling
 
 Progress is stored in your browser's localStorage. Use **Progress → Export** to back it up.
 
+## iPhone app
+Hosted at **https://jonnysmith123-code.github.io/drug-target-flashcards/**
+
+1. Open that link in **Safari** (it must be Safari, not Chrome).
+2. Tap **Share** (□↑) → **Add to Home Screen** → **Add**.
+3. Launch it from the home-screen icon. It runs full-screen and works offline after the first load.
+
+Progress on the phone is separate from progress on your Mac. To move it between devices, use Export on one and Import on the other.
+
+### Updating the app
+1. Edit the files.
+2. Bump `VERSION` in `sw.js` (e.g. `v1` → `v2`).
+3. `git commit -am "…" && git push`. GitHub Pages redeploys in about a minute.
+
+The phone picks up the new version the next time you open the app while online. Close and reopen it if you don't see the change.
+
 ## How it works
 - **Study**: Anki-style scheduling (SM-2). Rate each card Again / Hard / Good / Easy (keys 1–4, Space = show/Good). New cards arrive in a guided order: concepts → each target with its pathways. The default is 15 new cards a day, which you can change in Progress.
 - **Targets / Pathways / Concepts**: browse reference pages. "Practice" drills a single target or pathway without affecting your schedule.
