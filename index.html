@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Drug Target Flashcards</title>
+  <meta name="theme-color" content="#0f1420" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Drug Targets" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand">
+      <span class="logo">⬡</span>
+      <div><h1>Drug Target Flashcards</h1><p id="deck-size"></p></div>
+    </div>
+    <nav>
+      <button data-view="study">Study <span id="due-badge" class="badge"></span></button>
+      <button data-view="targets">Targets</button>
+      <button data-view="pathways">Pathways</button>
+      <button data-view="concepts">Concepts</button>
+      <button data-view="progress">Progress</button>
+    </nav>
+  </header>
+  <main id="main"></main>
+  <footer class="muted small desk">Space = show / Good · 1–4 = Again / Hard / Good / Easy · Progress is saved in this browser. Use Export to back it up.</footer>
+
+  <script src="js/data/concepts.js"></script>
+  <script src="js/data/pathways.js"></script>
+  <script src="js/data/targets.js"></script>
+  <script src="js/srs.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    if ("serviceWorker" in navigator && location.protocol !== "file:") {
+      navigator.serviceWorker.register("sw.js");
+    }
+  </script>
+</body>
+</html>
