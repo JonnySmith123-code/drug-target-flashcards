@@ -29,6 +29,14 @@ The phone picks up the new version the next time you open the app while online. 
 - **Targets / Pathways / Concepts**: browse reference pages. "Practice" drills a single target or pathway without affecting your schedule.
 - A card counts as *mastered* once its interval reaches 21 days or more. A target counts as *learned* when 80% or more of its cards are mastered.
 
+## Interactive pathway diagrams
+Every pathway is drawn as a cell diagram (`js/data/diagrams.js`, rendered by `js/diagram.js`).
+- **Step through it** with ◀ ▶ or Play. The current step's components light up and signals flow along the arrows.
+- **Tap any component** for an explanation and the drugs that act there.
+- **Drugs** shows a marker on each drug-target site: ✕ blocks, + activates.
+- Target pages and signalling cards show the target highlighted within its pathway.
+- **"Where it acts" cards**: the question shows the pathway, and the answer marks where the drug hits.
+
 ## Cards per target
 Overview (what it is, normal role) · Signalling cascade · Drug strategy · a "Why does this work?" mechanism question · one card per drug.
 

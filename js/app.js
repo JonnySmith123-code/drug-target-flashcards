@@ -35,15 +35,35 @@
   function conceptCards(c) {
     add({ id: `c:${c.id}`, kind: "Concept", group: `concept:${c.id}`, label: c.title, front: fmt(c.question), back: bullets(c.answer) });
   }
+  const hasDgm = (pid) => window.Diagram && Diagram.has(pid);
+  const dgm = (pid, attrs = {}) =>
+    `<div class="dgm" data-pid="${pid}" ${Object.entries(attrs).map(([k, v]) => `data-${k}="${esc(v)}"`).join(" ")}></div>`;
+  const textSteps = (steps) => `<details class="as-text"><summary>Steps as text</summary>${flow(steps)}</details>`;
+
   function pathwayCards(p) {
     const group = `pathway:${p.id}`;
     add({
       id: `p:${p.id}:steps`, kind: "Pathway", group, label: p.name,
       front: `Walk through the <strong>${esc(p.name)}</strong> pathway, step by step.`,
-      back: `<p class="summary">${fmt(p.summary)}</p>${flow(p.steps)}<p class="meta"><span>Drugs acting here</span>${fmt(p.drugs)}</p>`
+      back: `<p class="summary">${fmt(p.summary)}</p>${hasDgm(p.id) ? dgm(p.id, { mode: "explore" }) + textSteps(p.steps) : flow(p.steps)}<p class="meta"><span>Drugs acting here</span>${fmt(p.drugs)}</p>`
     });
     add({ id: `p:${p.id}:why`, kind: "Pathway · why", group, label: p.name, front: fmt(p.question), back: `<p>${fmt(p.answer)}</p>` });
+    // Visual "where does it act?" cards, one per drug marked on the diagram.
+    const D = hasDgm(p.id) && window.FC_DIAGRAMS[p.id];
+    (D && D.drugs ? D.drugs : []).forEach((dr, i) =>
+      add({
+        id: `p:${p.id}:where:${slug(dr.d)}`, kind: "Where it acts", group, label: p.name,
+        front: `Where on this pathway does <strong>${esc(dr.d)}</strong> act, and what does it do?${dgm(p.id, { mode: "overview" })}`,
+        back: dgm(p.id, { mode: "drug", drug: i })
+      })
+    );
   }
+  function targetDiagram(t) {
+    const loc = window.Diagram && Diagram.forTarget(t.id, t.pathways);
+    if (!loc) return "";
+    return `<p class="meta dgm-intro"><span>In context: ${esc(pathwayById[loc.pid].name)}</span>${esc(t.short)} is highlighted.</p>${dgm(loc.pid, { mode: "target", highlight: loc.node })}`;
+  }
+
   function targetCards(t) {
     const group = `target:${t.id}`;
     const label = `${t.short} · ${t.area}`;
@@ -55,7 +75,7 @@
     add({
       id: `t:${t.id}:signal`, kind: "Signalling", group, label,
       front: `Walk through the signalling at <strong>${esc(t.short)}</strong>, from ligand to effect.`,
-      back: flow(t.signalling)
+      back: flow(t.signalling) + targetDiagram(t)
     });
     add({
       id: `t:${t.id}:drugs`, kind: "Drug strategy", group, label,
@@ -202,6 +222,7 @@
     else if (view === "pathway") main.innerHTML = renderPathway(pathwayById[viewArg]);
     else if (view === "concepts") main.innerHTML = renderConcepts();
     else if (view === "progress") main.innerHTML = renderProgress();
+    if (window.Diagram) Diagram.mountAll(main);
     updateBadge();
   }
 
@@ -313,7 +334,7 @@
       </header>
       ${bar(st)}
       <div class="panel"><h3>Where & normal role</h3><p><strong>Location:</strong> ${fmt(t.location)}</p><p>${fmt(t.role)}</p></div>
-      <div class="panel"><h3>Signalling</h3>${flow(t.signalling)}</div>
+      <div class="panel"><h3>Signalling</h3>${flow(t.signalling)}${targetDiagram(t)}</div>
       <div class="panel"><h3>How drugs hit it</h3><p>${fmt(t.mechanism)}</p>${drugTable(t.drugs)}</div>
       <div class="panel why"><h3>${fmt(t.question)}</h3><p>${fmt(t.answer)}</p><p class="pearl"><span>Clinical pearl</span>${fmt(t.pearl)}</p></div>
       ${t.pathways.length ? `<div class="panel"><h3>Related pathways</h3><div class="chips">${t.pathways.map((pid) => `<button class="chip" data-pathway="${pid}">${esc(pathwayById[pid].name)}</button>`).join("")}</div></div>` : ""}
@@ -343,7 +364,7 @@
       <button class="btn small back-btn" data-go="pathways">← All pathways</button>
       <header class="detail-head"><div><h2>${esc(p.name)}</h2><p class="muted">${fmt(p.summary)}</p></div>
         <button class="btn primary" data-practice-ids="${ids.join(",")}" data-title="${esc(p.name)}">Practice ${ids.length} cards</button></header>
-      <div class="panel"><h3>Step by step</h3>${flow(p.steps)}</div>
+      <div class="panel"><h3>Step by step</h3>${hasDgm(p.id) ? dgm(p.id, { mode: "explore", list: "1" }) : flow(p.steps)}</div>
       <div class="panel"><h3>Drugs acting on this pathway</h3><p>${fmt(p.drugs)}</p></div>
       <div class="panel why"><h3>${fmt(p.question)}</h3><p>${fmt(p.answer)}</p></div>
       ${linked.length ? `<div class="panel"><h3>Targets in this deck that use it</h3><div class="chips">${linked.map((t) => `<button class="chip" data-target="${t.id}">${esc(t.short)}</button>`).join("")}</div></div>` : ""}
