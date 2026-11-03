@@ -4,10 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Drug Target Flashcards</title>
-  <meta name="theme-color" content="#0f1420" />
+  <meta name="theme-color" content="#F5F5F7" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="Drug Targets" />
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
   <link rel="manifest" href="manifest.webmanifest" />
@@ -16,31 +16,40 @@
 <body>
   <header class="app-header">
     <div class="brand">
-      <span class="logo">⬡</span>
+      <span class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l8.66 5v10L12 22l-8.66-5V7z"/><circle cx="12" cy="12" r="3"/></svg></span>
       <div><h1>Drug Target Flashcards</h1><p id="deck-size"></p></div>
     </div>
-    <nav>
-      <button data-view="study">Study <span id="due-badge" class="badge"></span></button>
-      <button data-view="targets">Targets</button>
-      <button data-view="pathways">Pathways</button>
-      <button data-view="concepts">Concepts</button>
-      <button data-view="progress">Progress</button>
+    <nav aria-label="Main">
+      <button data-view="study"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="14" height="14" rx="2.5"/><path d="M7 3h11.5A2.5 2.5 0 0 1 21 5.5V17"/></svg>Study<span id="due-badge" class="badge"></span></button>
+      <button data-view="targets"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/></svg>Targets</button>
+      <button data-view="pathways"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="6" r="2.2"/><circle cx="19" cy="6" r="2.2"/><circle cx="12" cy="18" r="2.2"/><path d="M7 7.3l3.8 8.6M17 7.3l-3.8 8.6M7.2 6h9.6"/></svg>Pathways</button>
+      <button data-view="body"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="4.5" r="2.3"/><path d="M5 9.5l7-1.5 7 1.5M12 8v6.5M12 14.5l-3 7M12 14.5l3 7"/></svg>Body</button>
+      <button data-view="concepts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.6 10.8c.6.5 1 1.2 1.1 2V16h5v-.2c.1-.8.5-1.5 1.1-2A6 6 0 0 0 12 3z"/></svg>Concepts</button>
+      <button data-view="progress"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 20V12M12 20V5M19 20v-9"/></svg>Progress</button>
     </nav>
   </header>
   <main id="main"></main>
-  <footer class="muted small desk">Space = show / Good · 1–4 = Again / Hard / Good / Easy · Progress is saved in this browser. Use Export to back it up.</footer>
+  <footer class="small desk">Space shows the answer · 1–4 = Again / Hard / Good / Easy · Progress is saved on this device. Use Export to back it up.</footer>
 
   <script src="js/data/concepts.js"></script>
   <script src="js/data/pathways.js"></script>
+  <script src="js/data/pathways-2.js"></script>
   <script src="js/data/targets.js"></script>
+  <script src="js/data/targets-cv-metab-eye.js"></script>
+  <script src="js/data/targets-resp-gi-immuno.js"></script>
+  <script src="js/data/targets-onc-haem.js"></script>
+  <script src="js/data/targets-neuro-repro-bone.js"></script>
+  <script src="js/data/targets-infectious.js"></script>
+  <script src="js/data/diseases-1.js"></script>
+  <script src="js/data/diseases-2.js"></script>
   <script src="js/data/diagrams.js"></script>
+  <script src="js/data/diagrams-2.js"></script>
   <script src="js/diagram.js"></script>
+  <script src="js/bodymap.js"></script>
   <script src="js/srs.js"></script>
   <script src="js/app.js"></script>
   <script>
-    if ("serviceWorker" in navigator && location.protocol !== "file:") {
-      navigator.serviceWorker.register("sw.js");
-    }
+    if ("serviceWorker" in navigator && location.protocol !== "file:") navigator.serviceWorker.register("sw.js");
   </script>
 </body>
 </html>

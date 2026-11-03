@@ -11,16 +11,16 @@
   const PATHWAYS = Object.fromEntries((window.FC_PATHWAYS || []).map((p) => [p.id, p]));
 
   const KIND = {
-    ligand:    { fill: "#3a2f17", stroke: "#f5c26b", pill: true },
-    receptor:  { fill: "#16294a", stroke: "#6aa8ff", rx: 10, tall: true },
-    channel:   { fill: "#123a3a", stroke: "#6fe0d0", rx: 6, tall: true, slot: true },
-    gprotein:  { fill: "#2b2148", stroke: "#c79bff", pill: true },
-    enzyme:    { fill: "#11353a", stroke: "#6fe0d0", rx: 6 },
-    kinase:    { fill: "#123826", stroke: "#3ecf8e", rx: 6 },
-    messenger: { fill: "#3d2a14", stroke: "#ffb86b", pill: true, small: true },
-    tf:        { fill: "#3d1a2a", stroke: "#ff8fb1", rx: 4 },
-    inhib:     { fill: "#3a1519", stroke: "#ef5f6b", rx: 6 },
-    output:    { fill: "rgba(207,215,234,0.04)", stroke: "#cfd7ea", rx: 8, dash: true }
+    ligand:    { fill: "#FFF5DC", stroke: "#D99A00", pill: true },
+    receptor:  { fill: "#E6F0FF", stroke: "#0A6CFF", rx: 10, tall: true },
+    channel:   { fill: "#E1F6F3", stroke: "#0E9C8C", rx: 6, tall: true, slot: true },
+    gprotein:  { fill: "#F1EBFF", stroke: "#8452E8", pill: true },
+    enzyme:    { fill: "#E3F4F9", stroke: "#0B87A8", rx: 6 },
+    kinase:    { fill: "#E5F6EA", stroke: "#1E9450", rx: 6 },
+    messenger: { fill: "#FFEEDD", stroke: "#DD7413", pill: true, small: true },
+    tf:        { fill: "#FDE9F1", stroke: "#CF3A78", rx: 4 },
+    inhib:     { fill: "#FDECEC", stroke: "#D63A3A", rx: 6 },
+    output:    { fill: "#FFFFFF", stroke: "#8E8E93", rx: 8, dash: true }
   };
   const KIND_NAME = { ligand: "Ligand", receptor: "Receptor", channel: "Channel / transporter", gprotein: "G protein / GTPase", enzyme: "Enzyme / adaptor",
     kinase: "Kinase", messenger: "Second messenger", tf: "Transcription factor / receptor", inhib: "Brake / inhibitor", output: "Outcome" };
@@ -78,7 +78,7 @@
         return `<g class="mem"><rect x="${x1}" y="${s.y - 7}" width="${x2 - x1}" height="14"/>${heads}</g>`;
       }
       if (s.t === "nucleus") {
-        return `<g class="nuc"><ellipse cx="${s.cx}" cy="${s.cy}" rx="${s.rx}" ry="${s.ry}"/><text x="${s.cx + s.rx - 8}" y="${s.cy - s.ry + 14}" text-anchor="end">Nucleus</text></g>`;
+        return `<g class="nuc"><ellipse cx="${s.cx}" cy="${s.cy}" rx="${s.rx}" ry="${s.ry}"/><text x="${s.cx + s.rx - 8}" y="${s.cy - s.ry + 14}" text-anchor="end">${esc(s.label || "Nucleus")}</text></g>`;
       }
       if (s.t === "box") {
         return `<g class="box ${s.kind || ""}"><rect x="${s.x}" y="${s.y}" width="${s.w}" height="${s.h}" rx="12"/><text x="${s.x + 8}" y="${s.y + 13}">${esc(s.label)}</text></g>`;

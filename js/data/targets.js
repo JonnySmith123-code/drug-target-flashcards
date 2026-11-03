@@ -5,7 +5,7 @@ window.FC_TARGETS = [
   // ───────────── Cardiovascular & renal ─────────────
   {
     id: "adrb2", name: "β2-adrenergic receptor", short: "β2-AR", gene: "ADRB2",
-    family: "GPCR (Gs)", area: "Respiratory & GI",
+    family: "GPCR (Gs)", area: "Respiratory",
     location: "Airway smooth muscle; also skeletal-muscle vasculature, uterus, liver, mast cells",
     role: "Responds to circulating adrenaline: bronchodilation, vasodilation in muscle, glycogenolysis, K⁺ uptake into cells.",
     signalling: [
@@ -139,7 +139,7 @@ window.FC_TARGETS = [
     question: "Why is dual antiplatelet therapy (aspirin + a P2Y12 inhibitor) used after a coronary stent?",
     answer: "Platelets amplify their own activation through two independent loops: thromboxane A2 (made by COX-1, blocked by aspirin) and released ADP (acting on P2Y12). Blocking both gives additive inhibition of platelet aggregation on the stent surface, which cuts stent thrombosis, at the cost of more bleeding.",
     pearl: "CYP2C19 loss-of-function alleles (common in East Asian populations) mean less clopidogrel effect. Ticagrelor can cause dyspnoea (it raises adenosine) and bradyarrhythmias.",
-    pathways: ["gi", "coag"]
+    pathways: ["gi", "coag", "eicosanoid"]
   },
   {
     id: "cox", name: "Cyclooxygenase-1/2", short: "COX-1/2", gene: "PTGS1 / PTGS2",
@@ -162,13 +162,13 @@ window.FC_TARGETS = [
     question: "Why does low-dose aspirin work as an antiplatelet, while selective COX-2 inhibitors increase cardiovascular risk?",
     answer: "Platelets have no nucleus and can't make new COX-1. Aspirin's irreversible acetylation therefore blocks platelet TXA2 for the platelet's whole lifespan (~7–10 days), while endothelial cells quickly resynthesise COX and keep making PGI2. COX-2 inhibitors do the opposite: they suppress endothelial PGI2 (largely COX-2 derived) without touching platelet COX-1/TXA2. That shifts the balance towards thrombosis (rofecoxib was withdrawn).",
     pearl: "GI ulcers come from loss of COX-1 PGE2/PGI2 mucosal protection. Renal: the afferent arteriole depends on prostaglandins, so the 'triple whammy' (NSAID + ACEi/ARB + diuretic) can cause AKI. Ibuprofen taken before aspirin can block aspirin's access to COX-1.",
-    pathways: ["nfkb"]
+    pathways: ["nfkb", "eicosanoid"]
   },
 
   // ───────────── Metabolic ─────────────
   {
     id: "glp1r", name: "Glucagon-like peptide-1 receptor", short: "GLP-1R", gene: "GLP1R",
-    family: "GPCR (class B, Gs)", area: "Metabolic",
+    family: "GPCR (class B, Gs)", area: "Metabolic & endocrine",
     location: "Pancreatic β-cells, hypothalamus (arcuate nucleus) and hindbrain (area postrema/NTS), stomach, heart, kidney",
     role: "Receptor for GLP-1, an incretin hormone released by intestinal L-cells after meals. It boosts glucose-dependent insulin secretion, suppresses glucagon, slows gastric emptying and promotes satiety.",
     signalling: [
@@ -188,11 +188,11 @@ window.FC_TARGETS = [
     question: "Why do GLP-1R agonists lower glucose with little risk of hypoglycaemia?",
     answer: "Insulin release is triggered by glucose metabolism: ATP closes K_ATP channels, the β-cell depolarises and Ca²⁺ enters. GLP-1R's cAMP signal only amplifies this Ca²⁺-triggered exocytosis. When glucose is normal, the β-cell isn't depolarised and the amplification has nothing to act on. Glucagon suppression is also glucose-dependent. (Hypoglycaemia risk rises when they're combined with sulfonylureas or insulin.)",
     pearl: "Native GLP-1 has a half-life of ~2 minutes (DPP-4). Nausea and vomiting come from slowed gastric emptying and area postrema activation, hence dose titration. Lean-mass loss and gallbladder events are worth knowing.",
-    pathways: ["gs", "incretin"]
+    pathways: ["gs", "incretin", "insulin"]
   },
   {
     id: "dpp4", name: "Dipeptidyl peptidase-4", short: "DPP-4", gene: "DPP4",
-    family: "Enzyme (serine protease)", area: "Metabolic",
+    family: "Enzyme (serine protease)", area: "Metabolic & endocrine",
     location: "Endothelial and epithelial cell surfaces; also a soluble form in plasma (also CD26 on T cells)",
     role: "Cleaves N-terminal dipeptides from peptides with Pro/Ala at position 2, including GLP-1 and GIP, inactivating them within minutes.",
     signalling: [
@@ -212,7 +212,7 @@ window.FC_TARGETS = [
   },
   {
     id: "sglt2", name: "Sodium–glucose co-transporter 2", short: "SGLT2", gene: "SLC5A2",
-    family: "Transporter (SLC5)", area: "Metabolic",
+    family: "Transporter (SLC5)", area: "Metabolic & endocrine",
     location: "Apical membrane of the early proximal tubule (S1/S2 segments)",
     role: "Reabsorbs ~90% of filtered glucose together with Na⁺ (1:1).",
     signalling: [
@@ -234,7 +234,7 @@ window.FC_TARGETS = [
   },
   {
     id: "hmgcr", name: "HMG-CoA reductase", short: "HMGCR", gene: "HMGCR",
-    family: "Enzyme (oxidoreductase)", area: "Metabolic",
+    family: "Enzyme (oxidoreductase)", area: "Metabolic & endocrine",
     location: "Endoplasmic reticulum, mainly hepatocytes",
     role: "Rate-limiting enzyme of cholesterol synthesis (HMG-CoA → mevalonate). Also supplies isoprenoids for protein prenylation.",
     signalling: [
@@ -252,11 +252,11 @@ window.FC_TARGETS = [
     question: "Statins inhibit cholesterol synthesis inside the liver. Why does LDL fall in the blood?",
     answer: "Hepatocytes sense the drop in intracellular cholesterol. SCAP moves SREBP2 to the Golgi, where it is cleaved and enters the nucleus to upregulate LDL receptor transcription. More LDL receptors on the liver surface pull LDL out of plasma. Most of the LDL reduction comes from increased clearance, not reduced output.",
     pearl: "SREBP2 also upregulates PCSK9, which limits the statin effect (doubling the dose gives only ~6% more LDL lowering), so PCSK9 inhibitors add on well. Myopathy risk rises with CYP3A4 inhibitors (simvastatin). Small rise in diabetes risk.",
-    pathways: []
+    pathways: ["lipid"]
   },
   {
     id: "pcsk9", name: "Proprotein convertase subtilisin/kexin 9", short: "PCSK9", gene: "PCSK9",
-    family: "Secreted protein (protease-family chaperone)", area: "Metabolic",
+    family: "Secreted protein (protease-family chaperone)", area: "Metabolic & endocrine",
     location: "Made and secreted mainly by hepatocytes; acts on hepatocyte surface LDL receptors",
     role: "Binds the LDL receptor and diverts it to lysosomal degradation instead of recycling, which reduces LDL clearance.",
     signalling: [
@@ -274,11 +274,11 @@ window.FC_TARGETS = [
     question: "Why was PCSK9 such a strongly validated drug target before any drug existed?",
     answer: "Human genetics. Gain-of-function PCSK9 mutations cause autosomal-dominant familial hypercholesterolaemia. Loss-of-function nonsense variants (found in ~2% of Black Americans) gave ~28% lower LDL from birth and ~88% fewer coronary events, with no apparent harm, including in a healthy woman with no functional PCSK9 at all. Nature had run the efficacy and safety trial.",
     pearl: "Synergistic with statins: statins raise PCSK9 via SREBP2, and blocking PCSK9 removes that brake. Inclisiran works through RNA interference (RISC degrades the mRNA).",
-    pathways: []
+    pathways: ["lipid"]
   },
   {
     id: "pparg", name: "Peroxisome proliferator-activated receptor γ", short: "PPARγ", gene: "PPARG",
-    family: "Nuclear receptor (type II, RXR heterodimer)", area: "Metabolic",
+    family: "Nuclear receptor (type II, RXR heterodimer)", area: "Metabolic & endocrine",
     location: "Adipose tissue (highest), macrophages, colon, placenta",
     role: "Master regulator of adipocyte differentiation and lipid storage. Fatty acids and eicosanoids are its natural ligands.",
     signalling: [
@@ -412,7 +412,7 @@ window.FC_TARGETS = [
     question: "Why are glucocorticoids such broad anti-inflammatories (an AGONIST that suppresses inflammation)?",
     answer: "GR is a natural brake. Instead of blocking one cytokine, an activated GR acts at the level of transcription. It tethers to NF-κB and AP-1, shutting off many inflammatory genes at once (IL-1, IL-6, TNF, COX-2, chemokines, adhesion molecules), recruits HDAC2 to close chromatin, and induces anti-inflammatory proteins (annexin-1 → less eicosanoid production; MKP-1 → switches off p38 MAPK; IκBα → traps NF-κB). Many side effects come from GR transactivating metabolic genes: hyperglycaemia, osteoporosis, muscle wasting.",
     pearl: "Exogenous steroids suppress the HPA axis, so taper after more than ~3 weeks. Steroid resistance in severe asthma/COPD is linked to reduced HDAC2 (oxidative stress from smoking). Inhaled steroids upregulate β2 receptors, which is one reason for the synergy with LABAs.",
-    pathways: ["nuclear", "nfkb"]
+    pathways: ["nuclear", "nfkb", "eicosanoid"]
   },
   {
     id: "il23", name: "Interleukin-23", short: "IL-23", gene: "IL23A (p19) + IL12B (p40)",
@@ -618,7 +618,7 @@ window.FC_TARGETS = [
     question: "BTK isn't mutated in CLL. Why do BTK inhibitors work so well?",
     answer: "CLL cells are addicted to chronic BCR signalling (antigen-driven or autonomous) for survival and proliferation, and to chemokine signals that keep them in protective lymph node niches. BTK is a chokepoint in that pathway. Inhibiting it cuts NF-κB survival signalling and disrupts homing, so cells leave the nodes. That causes a characteristic transient rise in blood lymphocyte count, a redistribution effect rather than progression.",
     pearl: "Ibrutinib off-target kinases (TEC, CSK, EGFR) contribute to atrial fibrillation, bleeding (platelet GPVI signalling uses BTK/TEC), rash and diarrhoea. Second-generation drugs are more selective with less AF. BTK inhibitors are in development for MS (microglia, B cells).",
-    pathways: ["tcell", "nfkb"]
+    pathways: ["tcell", "nfkb", "bcell"]
   },
   {
     id: "cdk46", name: "Cyclin-dependent kinases 4/6", short: "CDK4/6", gene: "CDK4, CDK6",
@@ -639,7 +639,7 @@ window.FC_TARGETS = [
     question: "Why are CDK4/6 inhibitors so effective in ER+ breast cancer but useless in Rb-deficient tumours?",
     answer: "ER directly drives cyclin D1 transcription, so ER+ breast cancers depend heavily on cyclin D–CDK4/6 to pass the G1 checkpoint. Combining with endocrine therapy blocks two linked steps. CDK4/6's key substrate for G1 exit is Rb: if Rb is lost (RB1 deletion), E2F is already free and the cells don't need CDK4/6, so the drug has nothing to act on. Rb loss is also a resistance mechanism.",
     pearl: "Neutropenia (palbociclib, ribociclib) is cytostatic and reversible, unlike chemotherapy neutropenia, so infections are less common. Abemaciclib (more CDK4-selective) causes diarrhoea and less neutropenia. Ribociclib prolongs QT.",
-    pathways: ["mapk", "nuclear"]
+    pathways: ["mapk", "nuclear", "dna"]
   },
   {
     id: "parp", name: "Poly(ADP-ribose) polymerase 1/2", short: "PARP", gene: "PARP1, PARP2",
@@ -661,7 +661,7 @@ window.FC_TARGETS = [
     question: "Why do PARP inhibitors selectively kill BRCA-mutant cancer cells and spare normal cells?",
     answer: "Synthetic lethality. PARP inhibition leaves single-strand breaks unrepaired and traps PARP on DNA. At replication these turn into double-strand breaks, which need homologous recombination (HR) for error-free repair. BRCA1/2-mutant tumour cells have lost both alleles and can't do HR, so breaks accumulate (or are mis-repaired by error-prone NHEJ) and the cells die. Normal cells in a BRCA carrier keep one working BRCA allele, so HR works and they survive.",
     pearl: "Works in any HR-deficient tumour ('BRCAness': PALB2, RAD51C/D). Resistance often comes from BRCA reversion mutations that restore the reading frame. Toxicity: myelosuppression, MDS/AML risk.",
-    pathways: []
+    pathways: ["dna"]
   },
   {
     id: "vegf", name: "VEGF-A / VEGFR2", short: "VEGF", gene: "VEGFA / KDR",
@@ -821,7 +821,7 @@ window.FC_TARGETS = [
     question: "Why does rituximab wipe out B cells, yet antibody levels and pre-existing vaccine immunity largely persist?",
     answer: "Long-lived plasma cells, which make most circulating antibody, are CD20-negative, so they survive and keep secreting IgG. Haematopoietic stem cells and early B precursors are also CD20-negative, so B cells regenerate ~6–12 months after the last dose. The cost is that new immune responses (new vaccines, new infections) are badly blunted while B cells are absent. Long-term use can gradually lower IgG.",
     pearl: "Efficacy in MS and RA showed B cells drive disease partly via antigen presentation and cytokines, not just antibodies. HBV reactivation (screen first), infusion reactions, PML (rare). Bispecifics cause cytokine release syndrome.",
-    pathways: []
+    pathways: ["bcell"]
   },
   {
     id: "proteasome", name: "26S proteasome", short: "Proteasome", gene: "PSMB5 (β5 subunit) and others",
@@ -844,7 +844,7 @@ window.FC_TARGETS = [
     question: "Why are myeloma cells especially vulnerable to proteasome inhibitors?",
     answer: "Myeloma cells are malignant plasma cells that make enormous amounts of immunoglobulin, so a constant fraction misfolds. They run close to the limit of their protein-disposal capacity and depend heavily on the proteasome and the UPR. Blocking the proteasome tips them into terminal ER stress and apoptosis well before normal cells. Reduced NF-κB survival signalling (IκB is stabilised) adds to the effect.",
     pearl: "Bortezomib causes peripheral neuropathy (less when given subcutaneously); carfilzomib causes less neuropathy but more cardiac toxicity. Shingles prophylaxis (acyclovir) is standard. Modern myeloma regimens add IMiDs (lenalidomide → cereblon-mediated degradation of IKZF1/3) and anti-CD38 (daratumumab).",
-    pathways: ["nfkb"]
+    pathways: ["nfkb", "apoptosis"]
   },
 
   // ───────────── Neuro & psychiatry ─────────────
@@ -1063,7 +1063,7 @@ window.FC_TARGETS = [
   },
   {
     id: "ppi", name: "Gastric H⁺/K⁺-ATPase (proton pump)", short: "H⁺/K⁺-ATPase", gene: "ATP4A / ATP4B",
-    family: "P-type ATPase (ion pump)", area: "Respiratory & GI",
+    family: "P-type ATPase (ion pump)", area: "GI & hepatology",
     location: "Canalicular membrane of gastric parietal cells (moved there from tubulovesicles on stimulation)",
     role: "Final step of acid secretion: pumps H⁺ into the gastric lumen in exchange for K⁺, using ATP.",
     signalling: [

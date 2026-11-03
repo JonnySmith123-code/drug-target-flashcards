@@ -29,6 +29,13 @@ The phone picks up the new version the next time you open the app while online. 
 - **Targets / Pathways / Concepts**: browse reference pages. "Practice" drills a single target or pathway without affecting your schedule.
 - A card counts as *mastered* once its interval reaches 21 days or more. A target counts as *learned* when 80% or more of its cards are mastered.
 
+## What's in the deck
+- **120 drug targets in 12 therapeutic areas.** They were chosen from the most-drugged target families in Santos *et al.*, *Nat Rev Drug Discov* 2017, plus the targets of today's top-selling medicines, and include infectious-disease targets.
+- **25 signalling pathways**, grouped by mechanism class: GPCR signalling, kinase signalling, inflammation and immunity, gene regulation and cell fate, physiological systems, excitable cells, and infection.
+- **72 diseases on an interactive body map (17 organs).** Tap an organ to see its diseases. Each disease has its pathophysiology, features, diagnosis, treatments linked to their drug targets, a mechanism question, and 4 study cards.
+
+Content files: `js/data/targets*.js`, `js/data/pathways*.js`, `js/data/diagrams*.js`, `js/data/diseases-*.js`. The body map is drawn in `js/bodymap.js`.
+
 ## Interactive pathway diagrams
 Every pathway is drawn as a cell diagram (`js/data/diagrams.js`, rendered by `js/diagram.js`).
 - **Step through it** with ◀ ▶ or Play. The current step's components light up and signals flow along the arrows.
