@@ -1,6 +1,6 @@
 // Offline support: cache the whole app. Bump VERSION whenever you edit any file
 // so phones pick up the new content.
-const VERSION = "v3";
+const VERSION = "v4";
 const CACHE = `drug-targets-${VERSION}`;
 const ASSETS = [
   "./",

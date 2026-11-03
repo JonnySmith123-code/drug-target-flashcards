@@ -11,16 +11,16 @@
   const PATHWAYS = Object.fromEntries((window.FC_PATHWAYS || []).map((p) => [p.id, p]));
 
   const KIND = {
-    ligand:    { fill: "#FFF5DC", stroke: "#D99A00", pill: true },
-    receptor:  { fill: "#E6F0FF", stroke: "#0A6CFF", rx: 10, tall: true },
-    channel:   { fill: "#E1F6F3", stroke: "#0E9C8C", rx: 6, tall: true, slot: true },
-    gprotein:  { fill: "#F1EBFF", stroke: "#8452E8", pill: true },
-    enzyme:    { fill: "#E3F4F9", stroke: "#0B87A8", rx: 6 },
-    kinase:    { fill: "#E5F6EA", stroke: "#1E9450", rx: 6 },
-    messenger: { fill: "#FFEEDD", stroke: "#DD7413", pill: true, small: true },
-    tf:        { fill: "#FDE9F1", stroke: "#CF3A78", rx: 4 },
-    inhib:     { fill: "#FDECEC", stroke: "#D63A3A", rx: 6 },
-    output:    { fill: "#FFFFFF", stroke: "#8E8E93", rx: 8, dash: true }
+    ligand:    { fill: "#FFFFFF", stroke: "#C98A00", pill: true },
+    receptor:  { fill: "#FFFFFF", stroke: "#0071E3", rx: 10, tall: true },
+    channel:   { fill: "#FFFFFF", stroke: "#0A9A8A", rx: 6, tall: true, slot: true },
+    gprotein:  { fill: "#FFFFFF", stroke: "#8E5CF0", pill: true },
+    enzyme:    { fill: "#FFFFFF", stroke: "#0B84A5", rx: 6 },
+    kinase:    { fill: "#FFFFFF", stroke: "#1D9A4B", rx: 6 },
+    messenger: { fill: "#FFFFFF", stroke: "#E07000", pill: true, small: true },
+    tf:        { fill: "#FFFFFF", stroke: "#D6337A", rx: 4 },
+    inhib:     { fill: "#FFFFFF", stroke: "#E30000", rx: 6 },
+    output:    { fill: "#FFFFFF", stroke: "#AEAEB2", rx: 8, dash: true }
   };
   const KIND_NAME = { ligand: "Ligand", receptor: "Receptor", channel: "Channel / transporter", gprotein: "G protein / GTPase", enzyme: "Enzyme / adaptor",
     kinase: "Kinase", messenger: "Second messenger", tf: "Transcription factor / receptor", inhib: "Brake / inhibitor", output: "Outcome" };
