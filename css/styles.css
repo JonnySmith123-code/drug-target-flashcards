@@ -212,6 +212,10 @@ table.drugs tr:last-child td { border-bottom: 0; }
 .focus-strip:hover { background: var(--tile-hover); }
 .tag { font-size: 0.7rem; font-weight: 500; color: var(--text-2); background: #E6E6EB; border-radius: 980px; padding: 0.1rem 0.5rem; margin-left: auto; white-space: nowrap; }
 .tag.today { color: #fff; background: var(--blue); }
+.tag.clinic { color: #8A4B00; background: #FFF1DC; }
+.clinic-txt { color: #8A4B00; }
+.brand-sub .phase { color: #8A4B00; }
+.kind-pipeline::before { background: #E07000; }
 .head-btns { display: flex; gap: 0.5rem; flex-wrap: wrap; }
 .setting input[type=checkbox] { width: 20px; height: 20px; accent-color: var(--blue); }
 
@@ -261,6 +265,27 @@ button.q-step:hover { border-color: var(--hair); }
 .q-result span { font-weight: 400; color: var(--text-2); margin-left: 0.4rem; }
 .grade.suggest { box-shadow: inset 0 0 0 2px var(--blue); }
 .btn.skip { color: var(--text-2); }
+
+
+/* ───────────── Sync ───────────── */
+.sync p { margin: 0 0 0.75rem; }
+.sync-steps { margin: 0 0 1rem; padding-left: 1.2rem; font-size: 0.94rem; }
+.sync-steps li { margin-bottom: 0.35rem; }
+.sync-steps a { color: var(--link); }
+.sync-form { display: flex; gap: 0.5rem; }
+.sync-form input { flex: 1; min-width: 0; font: inherit; font-size: 0.94rem; padding: 0.55rem 0.9rem; border: 1px solid var(--hair); border-radius: 980px; background: #fff; }
+.sync-msg { font-size: 0.86rem; color: var(--text-2); }
+.sync-msg.error { color: var(--red); }
+.sync-state { display: flex; align-items: center; gap: 0.5rem; font-weight: 500; }
+.sync-dot { width: 8px; height: 8px; border-radius: 50%; background: #1D9A4B; }
+.sync-state.syncing .sync-dot { background: var(--blue); animation: dgm-pulse 1s infinite; }
+.sync-state.error .sync-dot { background: var(--red); }
+.sync-state.offline .sync-dot, .sync-state.idle .sync-dot { background: #AEAEB2; }
+.sync-ind { display: none; width: 7px; height: 7px; border-radius: 50%; vertical-align: middle; margin-left: 0.3rem; background: #1D9A4B; }
+.sync-ind.ok, .sync-ind.idle, .sync-ind.syncing, .sync-ind.error, .sync-ind.offline { display: inline-block; }
+.sync-ind.syncing { background: var(--blue); }
+.sync-ind.error { background: var(--red); }
+.sync-ind.offline { background: #AEAEB2; }
 
 /* ───────────── Body map ───────────── */
 .body-layout { display: grid; grid-template-columns: minmax(260px, 360px) 1fr; gap: 1rem; align-items: start; }

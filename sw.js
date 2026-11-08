@@ -1,6 +1,6 @@
 // Offline support: cache the whole app. Bump VERSION whenever you edit any file
 // so phones pick up the new content.
-const VERSION = "v6";
+const VERSION = "v7";
 const CACHE = `drug-targets-${VERSION}`;
 const ASSETS = [
   "./",
@@ -16,6 +16,8 @@ const ASSETS = [
   "js/data/targets-onc-haem.js",
   "js/data/targets-neuro-repro-bone.js",
   "js/data/targets-infectious.js",
+  "js/data/targets-pipeline-1.js",
+  "js/data/targets-pipeline-2.js",
   "js/data/diseases-1.js",
   "js/data/diseases-2.js",
   "js/data/brands-1.js",
@@ -28,6 +30,7 @@ const ASSETS = [
   "js/quiz.js",
   "js/bodymap.js",
   "js/srs.js",
+  "js/sync.js",
   "js/app.js",
   "icons/apple-touch-icon.png",
   "icons/icon-192.png",
@@ -48,7 +51,7 @@ self.addEventListener("activate", (e) => {
 
 // Network first (so updates arrive when online), falling back to cache offline.
 self.addEventListener("fetch", (e) => {
-  if (e.request.method !== "GET") return;
+  if (e.request.method !== "GET" || new URL(e.request.url).origin !== self.location.origin) return;  // never cache GitHub API (sync) calls
   e.respondWith(
     fetch(e.request)
       .then((res) => {

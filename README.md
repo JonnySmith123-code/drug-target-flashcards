@@ -34,6 +34,8 @@ The phone picks up the new version the next time you open the app while online. 
   - *Where it acts*: tap the component a drug hits.
   - *Target signalling*: put the target's signalling steps in order.
   When you finish, the answer opens with your mistake count and a suggested rating: no mistakes → Good, a few → Hard, many → Again. You can still choose any rating.
+- **Sync across devices.** In Progress → Sync Across Devices, paste a GitHub token that has only the *gist* scope ([create one](https://github.com/settings/tokens/new?scopes=gist&description=Drug%20Target%20Flashcards)). Do the same on each device. Progress goes to a private gist on your account and syncs when the app opens, a few seconds after each rating, and when you return to it. For each card, the most recent review wins. Review history is kept per device and added up. A reset on one device clears all of them. The token stays on the device, never goes into the gist or exports, and the service worker never caches API calls.
+- **Clinical-stage targets.** 28 targets with drugs in trials but none approved (e.g. Lp(a), factor XI, TL1A, NLRP3, RAS(ON), PRMT5, tau). They're badged "In the clinic", and the Targets page has a filter for them. Each is taught right after the approved target it builds on (Lp(a) after PCSK9, NLRP3 after IL-1β). Each has a Pipeline card covering stage, key readouts and risk, and its drugs list the company and phase. The status is a 2026 snapshot; entries marked "(verify)" need checking against current news.
 - **Brands and companies.** Every drug shows its brand name and the company that markets it, and drug cards ask for them as a bonus. Search on the Targets page also matches brand and company names (e.g. "Keytruda", "Novartis").
 - A card counts as *mastered* once its interval reaches 21 days or more. A target counts as *learned* when 80% or more of its cards are mastered.
 
@@ -42,7 +44,7 @@ The phone picks up the new version the next time you open the app while online. 
 - **25 signalling pathways**, grouped by mechanism class: GPCR signalling, kinase signalling, inflammation and immunity, gene regulation and cell fate, physiological systems, excitable cells, and infection.
 - **72 diseases on an interactive body map (17 organs).** Tap an organ to see its diseases. Each disease has its pathophysiology, features, diagnosis, treatments linked to their drug targets, a mechanism question, and 4 study cards.
 
-Content files: `js/data/targets*.js`, `js/data/pathways*.js`, `js/data/diagrams*.js`, `js/data/diseases-*.js`, `js/data/brands-*.js` (brand and company keyed by lowercase generic name). The body map is drawn in `js/bodymap.js`.
+Content files: `js/data/targets*.js`, `js/data/pathways*.js`, `js/data/diagrams*.js`, `js/data/diseases-*.js`, `js/data/brands-*.js` (brand and company keyed by lowercase generic name), `js/data/targets-pipeline-*.js` (clinical-stage targets: `status: "clinical"`, `after`, `pipeline`, and `co`/`phase` on each drug). Sync lives in `js/sync.js`. The body map is drawn in `js/bodymap.js`.
 
 ## Interactive pathway diagrams
 Every pathway is drawn as a cell diagram (`js/data/diagrams.js`, rendered by `js/diagram.js`).

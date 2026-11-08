@@ -14,6 +14,8 @@
   const diseaseById = Object.fromEntries(DZ.map((d) => [d.id, d]));
   const AREA_ORDER = ["Cardiovascular & renal", "Metabolic & endocrine", "Respiratory", "GI & hepatology", "Immunology & inflammation", "Oncology",
     "Haematology & thrombosis", "Neuro & psychiatry", "Musculoskeletal & bone", "Reproductive & urology", "Ophthalmology", "Infectious disease"];
+  const PIPE = "In the clinic";
+  const NCLIN = T.filter((t) => t.status === "clinical").length, NAPP = T.length - NCLIN;
   const AREAS = [...AREA_ORDER.filter((a) => T.some((t) => t.area === a)), ...[...new Set(T.map((t) => t.area))].filter((a) => !AREA_ORDER.includes(a))];
   const ORGANS = window.BodyMap ? BodyMap.ORGANS : [];
   const organName = (id) => (window.BodyMap && BodyMap.byId[id] ? BodyMap.byId[id].name : id);
@@ -40,9 +42,10 @@
   }
   const brandText = (name) => brandsFor(name).map((b) => b.b + " " + b.co).join(" ");
   // Compact line under a drug name: "Ilaris · Novartis" (prefixed by generic when several)
-  function brandSub(name) {
+  const devSub = (d) => (d && (d.co || d.phase) ? `<span class="brand-sub"><span>${d.phase ? `<strong class="phase">${esc(d.phase)}</strong>` : ""}${d.phase && d.co ? " · " : ""}${esc(d.co || "")}</span></span>` : "");
+  function brandSub(name, d) {
     const list = brandsFor(name);
-    if (!list.length) return "";
+    if (!list.length) return devSub(d);
     return `<span class="brand-sub">${list.map((b) =>
       `<span>${list.length > 1 ? `<em>${esc(cap(b.generic))}</em> ` : ""}<strong>${esc(b.b)}</strong> · ${esc(b.co)}${b.g ? ` <i class="gen">generic</i>` : ""}</span>`).join("")}</span>`;
   }
@@ -56,7 +59,7 @@
   }
   const drugTable = (drugs) =>
     `<table class="drugs"><thead><tr><th>Drug</th><th>Action</th><th>Used for</th></tr></thead><tbody>${drugs
-      .map((d) => `<tr><td><strong>${esc(d.name)}</strong>${brandSub(d.name)}</td><td>${fmt(d.action)}</td><td>${fmt(d.use)}</td></tr>`)
+      .map((d) => `<tr><td><strong>${esc(d.name)}</strong>${brandSub(d.name, d)}</td><td>${fmt(d.action)}</td><td>${fmt(d.use)}</td></tr>`)
       .join("")}</tbody></table>`;
   const treatTable = (rows) =>
     `<table class="drugs"><thead><tr><th>Treatment</th><th>Mechanism</th></tr></thead><tbody>${rows
@@ -110,9 +113,10 @@
   }
   function targetCards(t) {
     const group = `target:${t.id}`;
-    const label = `${t.short} · ${t.area}`;
+    const clinical = t.status === "clinical";
+    const label = `${t.short} · ${clinical ? "In the clinic" : t.area}`;
     add({
-      id: `t:${t.id}:overview`, kind: "Target", group, label,
+      id: `t:${t.id}:overview`, kind: clinical ? "Target · in the clinic" : "Target", group, label,
       front: `What is <strong>${esc(t.name)}</strong> <span class="gene">${esc(t.gene)}</span>, and what does it normally do?`,
       back: `<dl class="facts"><dt>Class</dt><dd>${fmt(t.family)}</dd><dt>Where</dt><dd>${fmt(t.location)}</dd><dt>Normal role</dt><dd>${fmt(t.role)}</dd></dl>`
     });
@@ -130,13 +134,29 @@
       id: `t:${t.id}:why`, kind: "Mechanism · why", group, label, front: fmt(t.question),
       back: `<p>${fmt(t.answer)}</p><p class="pearl"><span>Clinical pearl</span>${fmt(t.pearl)}</p>`
     });
+    if (clinical && t.pipeline) add({
+      id: `t:${t.id}:pipeline`, kind: "Pipeline", group, label,
+      front: `Where does <strong>${esc(t.short)}</strong> stand in the clinic? Lead drugs and companies, key readouts, and the main risk.`,
+      back: pipelineBack(t)
+    });
     t.drugs.forEach((d) =>
       add({
         id: `t:${t.id}:drug:${slug(d.name)}`, kind: "Drug", group, label,
-        front: `<strong>${esc(d.name)}</strong>: what is its target, what does it do there, and what is it used for?${brandsFor(d.name).length ? ` <span class="front-sub">Bonus: brand name and company?</span>` : ""}`,
-        back: `<dl class="facts"><dt>Target</dt><dd>${esc(t.name)} (${esc(t.short)})</dd><dt>Action</dt><dd>${fmt(d.action)}</dd><dt>Used for</dt><dd>${fmt(d.use)}</dd>${brandFacts(d.name)}</dl><p class="meta"><span>How it works</span>${fmt(t.mechanism)}</p>`
+        front: clinical
+          ? `<strong>${esc(d.name)}</strong> (investigational): what is its target, what does it do there, and what is it being tested for?${d.co ? ` <span class="front-sub">Bonus: which company, and how far has it got?</span>` : ""}`
+          : `<strong>${esc(d.name)}</strong>: what is its target, what does it do there, and what is it used for?${brandsFor(d.name).length ? ` <span class="front-sub">Bonus: brand name and company?</span>` : ""}`,
+        back: `<dl class="facts"><dt>Target</dt><dd>${esc(t.name)} (${esc(t.short)})</dd><dt>Action</dt><dd>${fmt(d.action)}</dd><dt>${clinical ? "Being tested for" : "Used for"}</dt><dd>${fmt(d.use)}</dd>${clinical
+          ? `${d.co ? `<dt>Company</dt><dd>${esc(d.co)}</dd>` : ""}${d.phase ? `<dt>Stage</dt><dd>${esc(d.phase)}</dd>` : ""}`
+          : brandFacts(d.name)}</dl><p class="meta"><span>How it works</span>${fmt(t.mechanism)}</p>`
       })
     );
+  }
+  function pipelineBack(t) {
+    const pl = t.pipeline || {};
+    return `${pl.why ? `<p>${fmt(pl.why)}</p>` : ""}<dl class="facts">
+      <dt>Stage</dt><dd>${esc(pl.stage || "Clinical")}${pl.asOf ? ` <span class="muted">(as of ${esc(pl.asOf)})</span>` : ""}</dd>
+      ${pl.readouts ? `<dt>Key readouts</dt><dd>${fmt(pl.readouts)}</dd>` : ""}
+      ${pl.risk ? `<dt>Risk</dt><dd>${fmt(pl.risk)}</dd>` : ""}</dl>${drugTable(t.drugs)}`;
   }
   function diseaseCards(d) {
     const group = `disease:${d.id}`;
@@ -173,14 +193,19 @@
       (targetsWithDisease[key] = targetsWithDisease[key] || []).push(d);
     });
     C.filter((c) => !c.after).forEach(conceptCards);
-    T.forEach((t) => {
+    const approved = T.filter((t) => t.status !== "clinical");
+    const clinical = T.filter((t) => t.status === "clinical");
+    const teach = (t) => {
       t.pathways.forEach((pid) => {
         if (!seen.has(pid) && pathwayById[pid]) { seen.add(pid); pathwayCards(pathwayById[pid]); }
       });
       targetCards(t);
       C.filter((c) => c.after === t.id).forEach(conceptCards);
       (targetsWithDisease[t.id] || []).forEach(diseaseCards);
-    });
+    };
+    // Clinical-stage targets are taught right after the approved target they build on (e.g. Lp(a) after PCSK9).
+    approved.forEach((t) => { teach(t); clinical.filter((c) => c.after === t.id).forEach(teach); });
+    clinical.filter((c) => !c.after || !targetById[c.after] || targetById[c.after].status === "clinical").forEach(teach);
     P.filter((p) => !seen.has(p.id)).forEach(pathwayCards);
     C.filter((c) => c.after && !targetById[c.after]).forEach(conceptCards);
     (targetsWithDisease._end || []).forEach(diseaseCards);
@@ -193,6 +218,9 @@
     s.settings = { newPerDay: 15, dailyPathway: true, ...(s.settings || {}) };
     s.history = s.history || {};
     s.focusDone = s.focusDone || {};   // pathwayId → date it was completed as the daily pathway
+    s.remoteHist = s.remoteHist || {}; // other devices' review history (from sync), by device id
+    s.settingsAt = s.settingsAt || 0;
+    s.resetAt = s.resetAt || 0;
     rollDay(s);
     return s;
   }
@@ -203,7 +231,60 @@
     try { return normalize(JSON.parse(localStorage.getItem(STORE_KEY))); } catch (e) { return normalize({}); }
   }
   let S = load();
-  const save = () => localStorage.setItem(STORE_KEY, JSON.stringify(S));
+  const save = () => { localStorage.setItem(STORE_KEY, JSON.stringify(S)); if (window.Sync) Sync.schedule(); };
+
+  // ───────────── sync (js/sync.js moves this doc to/from a private gist) ─────────────
+  const DEVICE = localStorage.getItem("drugTargetFlashcards.device") || (() => {
+    const id = Math.random().toString(36).slice(2, 10);
+    localStorage.setItem("drugTargetFlashcards.device", id);
+    return id;
+  })();
+  const histOn = (d) => (S.history[d] || 0) + Object.values(S.remoteHist).reduce((n, h) => n + (h[d] || 0), 0);
+  function exportDoc() {
+    return {
+      app: "drug-target-flashcards", v: 1, updated: Date.now(),
+      cards: S.cards, settings: S.settings, settingsAt: S.settingsAt, resetAt: S.resetAt,
+      focus: S.focus || null, focusDone: S.focusDone, daily: S.daily,
+      histories: { ...S.remoteHist, [DEVICE]: S.history }
+    };
+  }
+  // Card by card the most recently reviewed version wins; histories are kept per device and summed.
+  function mergeDoc(r) {
+    if (!r || r.app !== "drug-target-flashcards") return false;
+    let changed = false;
+    const touched = new Set();
+    if ((r.resetAt || 0) > S.resetAt) {          // the other device reset everything
+      S.resetAt = r.resetAt; S.cards = {}; S.history = {}; S.remoteHist = {}; S.focusDone = {}; S.focus = null; changed = true;
+    }
+    for (const [id, rc] of Object.entries(r.cards || {})) {
+      const lc = S.cards[id];
+      if ((rc.last || 0) < S.resetAt) continue;
+      if (!lc || (rc.last || 0) > (lc.last || 0)) { S.cards[id] = rc; changed = true; touched.add(id); }
+    }
+    if ((r.settingsAt || 0) > S.settingsAt) { S.settings = { ...S.settings, ...r.settings }; S.settingsAt = r.settingsAt; changed = true; }
+    if (r.focus && (!S.focus || (r.focus.at || 0) > (S.focus.at || 0))) { S.focus = r.focus; changed = true; }
+    for (const [pid, date] of Object.entries(r.focusDone || {})) if (!S.focusDone[pid]) { S.focusDone[pid] = date; changed = true; }
+    if (r.daily && r.daily.date === todayKey()) {
+      rollDay(S);
+      const nd = Math.max(S.daily.newDone, r.daily.newDone || 0), ex = Math.max(S.daily.extraNew, r.daily.extraNew || 0);
+      if (nd !== S.daily.newDone || ex !== S.daily.extraNew) { S.daily.newDone = nd; S.daily.extraNew = ex; changed = true; }
+    }
+    for (const [dev, h] of Object.entries(r.histories || {})) {
+      if (dev === DEVICE) continue;
+      if (JSON.stringify(S.remoteHist[dev]) !== JSON.stringify(h)) { S.remoteHist[dev] = h; changed = true; }
+    }
+    if (changed) {
+      localStorage.setItem(STORE_KEY, JSON.stringify(S));
+      // Don't yank a card out from under you mid-answer; otherwise refresh the screen.
+      // If the card on screen was just answered on the other device, move on to the next one.
+      const stale = current && !revealed && touched.has(current.id);
+      if (view === "study" && (practice || (current && !stale))) updateBadge();
+      else if (view === "study" || view === "progress") { if (!practice) { current = null; revealed = false; quizResult = null; } render(); }
+      else updateBadge();
+    }
+    return changed;
+  }
+  const settingsChanged = () => { S.settingsAt = Date.now(); save(); };
   const stateOf = (id) => S.cards[id];
   const isNew = (id) => !S.cards[id] || S.cards[id].state === "new";
   const isLearning = (s) => s && (s.state === "learning" || s.state === "relearning");
@@ -259,12 +340,12 @@
     if (f && pathwayById[f.pid] && (f.date === today || !S.focusDone[f.pid])) return f;  // keep today's, or carry over an unfinished one
     const pid = PATHWAY_ORDER.find((id) => !S.focusDone[id]);
     if (!pid) return null;
-    S.focus = { pid, date: today, started: today };
+    S.focus = { pid, date: today, started: today, at: Date.now() };
     save();
     return S.focus;
   }
   function setFocus(pid) {
-    S.focus = { pid, date: todayKey(), started: todayKey() };
+    S.focus = { pid, date: todayKey(), started: todayKey(), at: Date.now() };
     delete S.focusDone[pid];
     save();
   }
@@ -461,29 +542,30 @@
 
   function renderTargets() {
     const q = search.trim().toLowerCase();
-    const match = (t) => !q || [t.name, t.short, t.gene, t.family, t.area, ...t.drugs.map((d) => `${d.name} ${d.action} ${d.use} ${brandText(d.name)}`)].join(" ").toLowerCase().includes(q);
-    const areas = AREAS.filter((a) => filterArea === "All" || a === filterArea);
+    const match = (t) => !q || [t.name, t.short, t.gene, t.family, t.area, ...t.drugs.map((d) => `${d.name} ${d.action} ${d.use} ${brandText(d.name)} ${d.co || ""} ${d.phase || ""}`, t.status === "clinical" ? "in the clinic pipeline" : "")].join(" ").toLowerCase().includes(q);
+    const pipeOnly = filterArea === PIPE;
+    const areas = AREAS.filter((a) => filterArea === "All" || pipeOnly || a === filterArea);
     let shown = 0;
     const sections = areas.map((a) => {
-      const list = T.filter((t) => t.area === a && match(t));
+      const list = T.filter((t) => t.area === a && match(t) && (!pipeOnly || t.status === "clinical"));
       shown += list.length;
       if (!list.length) return "";
       return `<section class="group" id="${areaSlug(a)}"><h2 class="group-title">${esc(a)} <span>${list.length}</span></h2>
         <div class="grid">${list.map((t) => {
           const st = groupStats(`target:${t.id}`);
           return `<button class="tile" data-target="${t.id}">
-            <div class="tile-top"><span class="short">${esc(t.short)}</span>${chevron}</div>
+            <div class="tile-top"><span class="short">${esc(t.short)}</span>${t.status === "clinical" ? `<span class="tag clinic">In the clinic</span>` : ""}${chevron}</div>
             <div class="name">${esc(t.name)}</div>
             <div class="family">${esc(t.family)}</div>
             <div class="drug-hint">${esc(t.drugs.map((d) => d.name.split(" /")[0].split(" (")[0]).slice(0, 3).join(" · "))}</div>
             ${bar(st)}</button>`;
         }).join("")}</div></section>`;
     }).join("");
-    return `${title("Drug Targets", `${T.length} targets across ${AREAS.length} therapeutic areas, chosen from the targets with the most approved drugs (Santos et al., 2017) and today's top-selling medicines.`)}
+    return `${title("Drug Targets", `${NAPP} approved targets across ${AREAS.length} therapeutic areas, chosen from the targets with the most approved drugs (Santos et al., 2017) and today's top-selling medicines${NCLIN ? `, plus ${NCLIN} clinical-stage targets with no approved drug yet` : ""}.`)}
       <div class="toolbar">
         <div class="search"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.5" cy="8.5" r="6" fill="none" stroke="currentColor" stroke-width="2"/><path d="M13 13l5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
         <input id="search" type="search" placeholder="Search targets, genes, drugs, brands, companies" value="${esc(search)}" /></div>
-        <div class="chips scroll">${["All", ...AREAS].map((a) => `<button class="chip ${a === filterArea ? "on" : ""}" data-area="${esc(a)}">${esc(a)}</button>`).join("")}</div>
+        <div class="chips scroll">${["All", ...(NCLIN ? [PIPE] : []), ...AREAS].map((a) => `<button class="chip ${a === filterArea ? "on" : ""}" data-area="${esc(a)}">${esc(a)}</button>`).join("")}</div>
       </div>
       ${shown ? sections : `<p class="empty-state">No targets match “${esc(search)}”.</p>`}`;
   }
@@ -497,7 +579,7 @@
     return `<section class="detail">
       <button class="back-link" data-view="targets">${chevron}Targets</button>
       <header class="detail-head">
-        <div><p class="eyebrow">${esc(t.area)}</p><h1>${esc(t.name)}</h1>
+        <div><p class="eyebrow">${esc(t.area)}${t.status === "clinical" ? ` · <span class="clinic-txt">In the clinic${t.pipeline && t.pipeline.stage ? `, ${esc(t.pipeline.stage)}` : ""}</span>` : ""}</p><h1>${esc(t.name)}</h1>
         <p class="muted">${esc(t.short)} · ${esc(t.gene)} · ${esc(t.family)}</p></div>
         <button class="btn primary" data-practice-group="target:${t.id}" data-title="${esc(t.short)}">Practice ${st.total} cards</button>
       </header>
@@ -505,6 +587,7 @@
       <div class="panel"><h3>Where & normal role</h3><p><strong>Location:</strong> ${fmt(t.location)}</p><p>${fmt(t.role)}</p></div>
       <div class="panel"><h3>Signalling</h3>${flow(t.signalling)}${targetDiagram(t)}</div>
       <div class="panel"><h3>How drugs hit it</h3><p>${fmt(t.mechanism)}</p>${drugTable(t.drugs)}</div>
+      ${t.status === "clinical" && t.pipeline ? `<div class="panel pipeline"><h3>In the clinic</h3>${pipelineBack({ ...t, drugs: [] })}</div>` : ""}
       <div class="panel why"><h3>${fmt(t.question)}</h3><p>${fmt(t.answer)}</p><p class="pearl"><span>Clinical pearl</span>${fmt(t.pearl)}</p></div>
       ${dz.length ? `<div class="panel"><h3>Diseases</h3><div class="chips">${dz.map((d) => `<button class="chip" data-disease="${d.id}">${esc(d.short)}</button>`).join("")}</div></div>` : ""}
       ${t.pathways.length ? `<div class="panel"><h3>Related pathways</h3><div class="chips">${t.pathways.filter((p) => pathwayById[p]).map((pid) => `<button class="chip" data-pathway="${pid}">${esc(pathwayById[pid].name)}</button>`).join("")}</div></div>` : ""}
@@ -609,7 +692,7 @@
     const c = counts();
     const learned = (prefix, list) => list.filter((x) => { const st = groupStats(`${prefix}:${x.id}`); return st.total && st.mastered / st.total >= 0.8; }).length;
     const days = [...Array(14)].map((_, i) => { const d = new Date(); d.setDate(d.getDate() - (13 - i)); return todayKey(d); });
-    const maxH = Math.max(1, ...days.map((d) => S.history[d] || 0));
+    const maxH = Math.max(1, ...days.map(histOn));
     const forecast = [...Array(7)].map((_, i) => {
       const start = new Date(); start.setHours(0, 0, 0, 0); start.setDate(start.getDate() + i);
       const end = start.getTime() + DAY;
@@ -629,7 +712,7 @@
       </div>
       <div class="two-col">
         <div class="panel"><h3>Reviews · last 14 days</h3>
-          <div class="bars">${days.map((d) => `<div class="bar-col" title="${d}: ${S.history[d] || 0}"><div style="height:${((S.history[d] || 0) / maxH) * 100}%"></div><span>${d.slice(8)}</span></div>`).join("")}</div></div>
+          <div class="bars">${days.map((d) => `<div class="bar-col" title="${d}: ${histOn(d)}"><div style="height:${(histOn(d) / maxH) * 100}%"></div><span>${d.slice(8)}</span></div>`).join("")}</div></div>
         <div class="panel"><h3>Due · next 7 days</h3>
           <div class="bars">${forecast.map((n, i) => `<div class="bar-col" title="${n} reviews"><div class="f" style="height:${(n / maxF) * 100}%"></div><span>${i === 0 ? "Today" : "+" + i}</span></div>`).join("")}</div></div>
       </div>
@@ -639,6 +722,7 @@
       <div class="panel"><h3>Diseases by organ</h3>
         ${ORGANS.filter((o) => diseasesOf(o.id).length).map((o) => areaRow(o.name, CARDS.filter((x) => x.group.startsWith("disease:") && diseaseById[x.group.slice(8)].organ === o.id).map((x) => x.id))).join("")}
       </div>
+      ${syncPanel()}
       <div class="panel"><h3>Settings</h3>
         <label class="setting"><span>New cards per day</span><input id="new-per-day" type="number" min="0" max="200" value="${S.settings.newPerDay}" /></label>
         <label class="setting"><span>Pathway of the day</span><input id="daily-pathway" type="checkbox" ${S.settings.dailyPathway ? "checked" : ""} /></label>
@@ -650,6 +734,34 @@
           <button class="btn danger" data-act="reset">Reset All Progress</button>
         </div>
       </div>`;
+  }
+
+  function syncPanel() {
+    if (!window.Sync) return "";
+    const st = Sync.status, info = Sync.info;
+    if (!Sync.connected) {
+      return `<div class="panel sync" id="sync-panel"><h3>Sync Across Devices</h3>
+        <p>Keep your phone and laptop in step. Progress is stored in a private GitHub Gist on your own account and syncs automatically.</p>
+        <ol class="sync-steps">
+          <li><a href="https://github.com/settings/tokens/new?scopes=gist&description=Drug%20Target%20Flashcards" target="_blank" rel="noopener">Create a GitHub token</a> with only the <strong>gist</strong> box ticked. Pick an expiry, or "No expiration".</li>
+          <li>Paste it below and tap Connect. Do the same on each device; they'll find the same gist.</li>
+        </ol>
+        <div class="sync-form"><input id="sync-token" type="password" placeholder="ghp_…" autocomplete="off" spellcheck="false" /><button class="btn primary" data-act="sync-connect">Connect</button></div>
+        ${st.msg ? `<p class="sync-msg ${st.state}">${esc(st.msg)}</p>` : ""}</div>`;
+    }
+    const when = info.lastSync ? `${SRS.formatDelta(Date.now() - info.lastSync)} ago` : "not yet";
+    const label = { syncing: "Syncing…", ok: `Synced ${when}`, idle: `Last synced ${when}`, offline: "Offline", error: "Sync problem" }[st.state] || `Last synced ${when}`;
+    return `<div class="panel sync" id="sync-panel"><h3>Sync Across Devices</h3>
+      <p class="sync-state ${st.state}"><span class="sync-dot"></span>${label}<span class="muted"> · GitHub @${esc(info.login || "")}</span></p>
+      ${st.msg && st.state !== "ok" ? `<p class="sync-msg ${st.state}">${esc(st.msg)}</p>` : ""}
+      <p class="muted small">Syncs when the app opens, a few seconds after each rating, and when you come back to it. For each card, the most recent review wins.</p>
+      <div class="row"><button class="btn" data-act="sync-now">Sync Now</button><button class="btn danger" data-act="sync-off">Disconnect This Device</button></div></div>`;
+  }
+  function refreshSyncPanel() {
+    const el = document.getElementById("sync-panel");
+    if (el) { const tmp = document.createElement("div"); tmp.innerHTML = syncPanel(); el.replaceWith(tmp.firstElementChild); }
+    const dot = document.getElementById("sync-indicator");
+    if (dot) { dot.className = window.Sync && Sync.connected ? `sync-ind ${Sync.status.state}` : "sync-ind"; dot.title = window.Sync && Sync.connected ? `Sync: ${Sync.status.state}` : ""; }
   }
 
   // ───────────── events ─────────────
@@ -672,7 +784,7 @@
     }
     if (d.area) {
       filterArea = d.area; render();
-      if (d.area !== "All") { const s = document.getElementById(areaSlug(d.area)); if (s) s.scrollIntoView({ block: "start" }); }
+      if (d.area !== "All" && d.area !== PIPE) { const s = document.getElementById(areaSlug(d.area)); if (s) s.scrollIntoView({ block: "start" }); }
       return;
     }
     if (d.practiceGroup) return startPractice(d.title, CARDS.filter((c) => c.group === d.practiceGroup).map((c) => c.id));
@@ -680,6 +792,13 @@
     switch (d.act) {
       case "reveal": return reveal();
       case "end-practice": return endPractice();
+      case "sync-connect": {
+        const tok = ($("#sync-token") || {}).value;
+        Sync.connect(tok).catch(() => {}).finally(refreshSyncPanel);
+        return;
+      }
+      case "sync-now": Sync.syncNow(); return;
+      case "sync-off": if (confirm("Stop syncing on this device? Your progress here and in the gist is kept.")) { Sync.disconnect(); refreshSyncPanel(); } return;
       case "focus-test": { const f = ensureFocus(); if (f) startFocus(f.pid); return; }
       case "set-focus": setFocus(d.pid); return render();
       case "organ-clear": organSel = null; return render();
@@ -687,7 +806,7 @@
       case "extra-new": S.daily.extraNew += 10; save(); current = null; return render();
       case "export": return exportProgress();
       case "reset":
-        if (confirm("Reset ALL progress? This cannot be undone (export first if unsure).")) { S = normalize({ settings: S.settings }); save(); current = null; render(); }
+        if (confirm("Reset ALL progress? This cannot be undone (export first if unsure).")) { S = normalize({ settings: S.settings, settingsAt: S.settingsAt, resetAt: Date.now() }); save(); current = null; render(); }
         return;
     }
   });
@@ -723,9 +842,9 @@
   document.addEventListener("change", (e) => {
     if (e.target.id === "new-per-day") {
       S.settings.newPerDay = Math.max(0, Math.min(200, Number(e.target.value) || 0));
-      save(); current = null; render();
+      settingsChanged(); current = null; render();
     }
-    if (e.target.id === "daily-pathway") { S.settings.dailyPathway = e.target.checked; save(); render(); }
+    if (e.target.id === "daily-pathway") { S.settings.dailyPathway = e.target.checked; settingsChanged(); render(); }
     if (e.target.id === "import-file" && e.target.files[0]) {
       e.target.files[0].text().then((txt) => {
         try {
@@ -747,8 +866,10 @@
     URL.revokeObjectURL(a.href);
   }
 
-  setInterval(() => { if (view === "study" && !current) render(); else updateBadge(); }, 30 * 1000);
+  setInterval(() => { if (view === "study" && !current) render(); else updateBadge(); if (view === "progress") refreshSyncPanel(); }, 30 * 1000);
 
-  $("#deck-size").textContent = `${T.length} targets · ${P.length} pathways · ${DZ.length} diseases · ${CARDS.length} cards`;
+  $("#deck-size").textContent = `${NAPP} targets${NCLIN ? ` + ${NCLIN} in the clinic` : ""} · ${P.length} pathways · ${DZ.length} diseases · ${CARDS.length} cards`;
   render();
+  if (window.Sync) Sync.init({ exportDoc, merge: mergeDoc, onStatus: refreshSyncPanel });
+  refreshSyncPanel();
 })();
