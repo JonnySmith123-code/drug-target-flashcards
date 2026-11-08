@@ -24,13 +24,43 @@
   const slug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
   const flow = (steps) => `<ol class="flow">${steps.map((s) => `<li>${fmt(s)}</li>`).join("")}</ol>`;
   const bullets = (items) => `<div class="bullets">${items.map((i) => `<p>${fmt(i)}</p>`).join("")}</div>`;
+  // ── brand names & companies (js/data/brands-*.js) ──
+  const BR = window.FC_BRANDS || {};
+  const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+  function brandsFor(name) {
+    const s = name.replace(/\([^)]*\)/g, "").replace(/\s+/g, " ").trim().toLowerCase();
+    const out = [], seen = new Set();
+    const take = (k) => { if (!BR[k]) return false; if (!seen.has(k)) { seen.add(k); out.push({ generic: k, ...BR[k] }); } return true; };
+    s.split(/\s\/\s|;|,|\s\+\s|\+/).forEach((p) => {
+      p = p.trim();
+      if (!p || take(p)) return;
+      if (p.includes("/")) p.split("/").forEach((q) => take(q.trim()));
+    });
+    return out;
+  }
+  const brandText = (name) => brandsFor(name).map((b) => b.b + " " + b.co).join(" ");
+  // Compact line under a drug name: "Ilaris · Novartis" (prefixed by generic when several)
+  function brandSub(name) {
+    const list = brandsFor(name);
+    if (!list.length) return "";
+    return `<span class="brand-sub">${list.map((b) =>
+      `<span>${list.length > 1 ? `<em>${esc(cap(b.generic))}</em> ` : ""}<strong>${esc(b.b)}</strong> · ${esc(b.co)}${b.g ? ` <i class="gen">generic</i>` : ""}</span>`).join("")}</span>`;
+  }
+  // Fact rows for the back of a drug card
+  function brandFacts(name) {
+    const list = brandsFor(name);
+    if (!list.length) return "";
+    const one = list.length === 1;
+    return `<dt>Brand</dt><dd>${list.map((b) => `${one ? "" : `${esc(cap(b.generic))}: `}<strong>${esc(b.b)}</strong>`).join("<br>")}</dd>
+      <dt>Company</dt><dd>${list.map((b) => `${one ? "" : `${esc(cap(b.generic))}: `}${esc(b.co)}${b.g ? ` <i class="gen">generics available</i>` : ""}`).join("<br>")}</dd>`;
+  }
   const drugTable = (drugs) =>
     `<table class="drugs"><thead><tr><th>Drug</th><th>Action</th><th>Used for</th></tr></thead><tbody>${drugs
-      .map((d) => `<tr><td><strong>${esc(d.name)}</strong></td><td>${fmt(d.action)}</td><td>${fmt(d.use)}</td></tr>`)
+      .map((d) => `<tr><td><strong>${esc(d.name)}</strong>${brandSub(d.name)}</td><td>${fmt(d.action)}</td><td>${fmt(d.use)}</td></tr>`)
       .join("")}</tbody></table>`;
   const treatTable = (rows) =>
     `<table class="drugs"><thead><tr><th>Treatment</th><th>Mechanism</th></tr></thead><tbody>${rows
-      .map((r) => `<tr><td><strong>${esc(r.name)}</strong></td><td>${fmt(r.action)}${r.target && targetById[r.target] ? ` <button class="pill-link" data-target="${r.target}">${esc(targetById[r.target].short)}</button>` : ""}</td></tr>`)
+      .map((r) => `<tr><td><strong>${esc(r.name)}</strong>${brandSub(r.name)}</td><td>${fmt(r.action)}${r.target && targetById[r.target] ? ` <button class="pill-link" data-target="${r.target}">${esc(targetById[r.target].short)}</button>` : ""}</td></tr>`)
       .join("")}</tbody></table>`;
   const $ = (sel) => document.querySelector(sel);
   const chevron = `<svg class="chev" viewBox="0 0 8 14" aria-hidden="true"><path d="M1 1l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
@@ -98,8 +128,8 @@
     t.drugs.forEach((d) =>
       add({
         id: `t:${t.id}:drug:${slug(d.name)}`, kind: "Drug", group, label,
-        front: `<strong>${esc(d.name)}</strong>: what is its target, what does it do there, and what is it used for?`,
-        back: `<dl class="facts"><dt>Target</dt><dd>${esc(t.name)} (${esc(t.short)})</dd><dt>Action</dt><dd>${fmt(d.action)}</dd><dt>Used for</dt><dd>${fmt(d.use)}</dd></dl><p class="meta"><span>How it works</span>${fmt(t.mechanism)}</p>`
+        front: `<strong>${esc(d.name)}</strong>: what is its target, what does it do there, and what is it used for?${brandsFor(d.name).length ? ` <span class="front-sub">Bonus: brand name and company?</span>` : ""}`,
+        back: `<dl class="facts"><dt>Target</dt><dd>${esc(t.name)} (${esc(t.short)})</dd><dt>Action</dt><dd>${fmt(d.action)}</dd><dt>Used for</dt><dd>${fmt(d.use)}</dd>${brandFacts(d.name)}</dl><p class="meta"><span>How it works</span>${fmt(t.mechanism)}</p>`
       })
     );
   }
@@ -155,8 +185,9 @@
   function normalize(s) {
     s = s && typeof s === "object" ? s : {};
     s.cards = s.cards || {};
-    s.settings = { newPerDay: 15, ...(s.settings || {}) };
+    s.settings = { newPerDay: 15, dailyPathway: true, ...(s.settings || {}) };
     s.history = s.history || {};
+    s.focusDone = s.focusDone || {};   // pathwayId → date it was completed as the daily pathway
     rollDay(s);
     return s;
   }
@@ -209,6 +240,32 @@
     return null;
   }
 
+  // ───────────── pathway of the day ─────────────
+  // One pathway at a time, in mechanism-group order. It stays "today's pathway" until every one of
+  // its cards has been rated Good/Easy and graduated; the next day a new one is picked.
+  const PATHWAY_ORDER = [...new Set([...GROUPS.flatMap((g) => g.ids), ...P.map((p) => p.id)])].filter((id) => pathwayById[id]);
+  const focusIds = (pid) => CARDS.filter((c) => c.group === `pathway:${pid}`).map((c) => c.id);
+  const comfortable = (id) => { const s = stateOf(id); return !!s && s.state === "review"; };
+  function focusStats(pid) { const ids = focusIds(pid); return { ids, total: ids.length, ok: ids.filter(comfortable).length }; }
+  function ensureFocus() {
+    if (!S.settings.dailyPathway) return null;
+    const today = todayKey();
+    const f = S.focus;
+    if (f && pathwayById[f.pid] && (f.date === today || !S.focusDone[f.pid])) return f;  // keep today's, or carry over an unfinished one
+    const pid = PATHWAY_ORDER.find((id) => !S.focusDone[id]);
+    if (!pid) return null;
+    S.focus = { pid, date: today, started: today };
+    save();
+    return S.focus;
+  }
+  function setFocus(pid) {
+    S.focus = { pid, date: todayKey(), started: todayKey() };
+    delete S.focusDone[pid];
+    save();
+  }
+  const focusDoneToday = (f) => f && S.focusDone[f.pid] === todayKey();
+  function nextFocusAfter(pid) { return PATHWAY_ORDER.find((id) => id !== pid && !S.focusDone[id]); }
+
   // ───────────── session / view state ─────────────
   let current = null;
   let revealed = false;
@@ -219,17 +276,38 @@
   let search = "";
   let organSel = null;
 
+  // A review card that isn't due yet. Passing it early confirms it but doesn't stretch the interval
+  // (that would inflate the schedule); failing it is a genuine lapse.
+  const isEarly = (id) => { const s = stateOf(id); return !!s && s.state === "review" && s.due > endOfToday(); };
+
+  // Every grade, in the daily queue or in practice, goes through the real scheduler.
+  function applyGrade(id, rating) {
+    const now = Date.now();
+    if (isEarly(id) && rating > 1) S.cards[id] = { ...stateOf(id), last: now };
+    else {
+      if (isNew(id)) S.daily.newDone++;
+      S.cards[id] = SRS.schedule(stateOf(id), rating, now);
+    }
+    S.history[todayKey()] = (S.history[todayKey()] || 0) + 1;
+    save();
+  }
+  function gradeLabels(id) {
+    const p = Object.fromEntries(Object.entries(SRS.preview(stateOf(id), Date.now())).map(([k, v]) => [k, SRS.formatDelta(v)]));
+    if (isEarly(id)) { p[2] = p[3] = p[4] = "keep"; }
+    return p;
+  }
+
   function gradeCard(rating) {
     if (!current || !revealed) return;
+    const id = current.id;
+    applyGrade(id, rating);
     if (practice) {
-      const id = practice.queue.shift();
-      if (rating === 1) practice.queue.push(id); else practice.done++;
-    } else {
-      const wasNew = isNew(current.id);
-      S.cards[current.id] = SRS.schedule(stateOf(current.id), rating, Date.now());
-      if (wasNew) S.daily.newDone++;
-      S.history[todayKey()] = (S.history[todayKey()] || 0) + 1;
-      save();
+      practice.queue.shift();
+      // Focus mode: a card leaves only once it's graduated and rated Good/Easy. Otherwise Again/Hard bring it back.
+      const again = practice.focus ? !(rating >= 3 && comfortable(id)) : rating <= 2;
+      if (again) practice.queue.splice(Math.min(practice.queue.length, rating === 1 ? 2 : 4), 0, id);
+      else practice.done++;
+      if (practice.focus && !practice.queue.length) S.focusDone[practice.focus] = todayKey(), save();
     }
     current = null;
     revealed = false;
@@ -237,10 +315,15 @@
     window.scrollTo(0, 0);
   }
   function reveal() { if (current && !revealed) { revealed = true; render(); } }
-  function startPractice(title, ids) {
-    practice = { title, queue: [...ids].sort(() => Math.random() - 0.5), total: ids.length, done: 0 };
+  function startPractice(title, ids, focus = null) {
+    ids = ids.filter((id) => cardById[id]);
+    practice = { title, focus, queue: focus ? ids : [...ids].sort(() => Math.random() - 0.5), total: ids.length, done: 0 };
     current = null; revealed = false;
     go("study");
+  }
+  function startFocus(pid) {
+    if (!S.focus || S.focus.pid !== pid) setFocus(pid);
+    startPractice(pathwayById[pid].name, focusIds(pid), pid);
   }
   function endPractice() { practice = null; current = null; revealed = false; render(); }
 
@@ -284,14 +367,25 @@
 
   function renderStudy() {
     if (practice) {
+      const f = practice.focus;
       if (!practice.queue.length) {
-        return `${title("Practice")}<section class="done panel"><h2>Practice complete</h2><p>${esc(practice.title)}: ${practice.total} cards reviewed.</p>
-          <p class="muted">Practice sessions don't change your schedule.</p><button class="btn primary" data-act="end-practice">Back to Study</button></section>`;
+        const next = f && nextFocusAfter(f);
+        return f
+          ? `${title("Today's Pathway")}<section class="done panel"><div class="done-icon">✓</div><h2>${esc(practice.title)}</h2>
+              <p>You rated all ${practice.total} cards Good or Easy. You're comfortable with this pathway.</p>
+              <p class="muted">These cards are now in your spaced-repetition schedule and will come back in your daily reviews.${next ? ` Tomorrow's pathway: <strong>${esc(pathwayById[next].name)}</strong>.` : ""}</p>
+              <div class="row center"><button class="btn primary" data-act="end-practice">Back to Study</button></div></section>`
+          : `${title("Practice")}<section class="done panel"><div class="done-icon">✓</div><h2>Practice complete</h2><p>${esc(practice.title)}: ${practice.total} cards.</p>
+              <p class="muted">Every rating counted toward your schedule, just like the daily queue.</p><div class="row center"><button class="btn primary" data-act="end-practice">Back to Study</button></div></section>`;
       }
       current = cardById[practice.queue[0]];
-      return `<div class="study-bar practice"><span><strong>Practice · ${esc(practice.title)}</strong> ${practice.done}/${practice.total}</span>
-        <button class="btn small" data-act="end-practice">Done</button></div>${renderCard(current, { 1: "repeat", 2: "", 3: "", 4: "" })}`;
+      const prog = f ? `${focusStats(f).ok} of ${practice.total} comfortable` : `${practice.done}/${practice.total}`;
+      return `<div class="study-bar practice"><span><strong>${f ? "Today's pathway" : "Practice"} · ${esc(practice.title)}</strong> <span class="muted">${prog}</span></span>
+        <button class="btn small" data-act="end-practice">Done</button></div>
+        ${f ? `<p class="muted small focus-hint">Cards you rate Again or Hard come back until you get them Good.</p>` : ""}
+        ${renderCard(current, gradeLabels(current.id))}`;
     }
+    const fpanel = focusPanel();
     if (!current) current = pickNext();
     const c = counts();
     const bar = `<div class="study-bar">
@@ -301,14 +395,35 @@
     </div>`;
     if (!current) {
       const upcoming = CARDS.map((x) => stateOf(x.id)).filter((s) => s && s.state !== "new").map((s) => s.due).filter((d) => d > Date.now()).sort((a, b) => a - b)[0];
-      return `${title("Today")}${bar}<section class="done panel">
+      return `${title("Today")}${fpanel}${bar}<section class="done panel">
         <div class="done-icon">✓</div><h2>All caught up</h2>
         <p class="muted">${c.unseen > 0 ? `You've reached today's new-card limit. ${c.unseen} cards are still unseen.` : "You've seen every card in the deck."}</p>
         ${upcoming ? `<p class="muted small">Next review in ${SRS.formatDelta(upcoming - Date.now())}.</p>` : ""}
         <div class="row center">${c.unseen > 0 ? `<button class="btn primary" data-act="extra-new">Learn 10 More</button>` : ""}<button class="btn" data-view="body">Explore Body Map</button></div></section>`;
     }
-    const labels = Object.fromEntries(Object.entries(SRS.preview(stateOf(current.id), Date.now())).map(([k, v]) => [k, SRS.formatDelta(v)]));
-    return `${title("Today")}${bar}${renderCard(current, labels)}`;
+    return `${title("Today")}${fpanel}${bar}${renderCard(current, gradeLabels(current.id))}`;
+  }
+
+  function focusPanel() {
+    const f = ensureFocus();
+    if (!f) return "";
+    const p = pathwayById[f.pid];
+    const st = focusStats(f.pid);
+    const done = focusDoneToday(f);
+    const grp = GROUPS.find((g) => g.ids.includes(f.pid));
+    const day = f.started && f.started !== todayKey() ? ` · started ${f.started.slice(5).replace("-", "/")}` : "";
+    const sub = done ? `Done for today. You're comfortable with all ${st.total} cards.` : `${st.ok} of ${st.total} cards comfortable${day}`;
+    return `<section class="focus">
+      <div class="focus-main">
+        <p class="eyebrow">Today's pathway${grp ? ` · ${esc(grp.name)}` : ""}</p>
+        <h2>${done ? `<span class="ok">✓</span> ` : ""}${esc(p.name)}</h2>
+        <p class="muted">${sub}</p>
+        <div class="progress"><div class="mastered" style="width:${st.total ? (st.ok / st.total) * 100 : 0}%"></div></div>
+      </div>
+      <div class="focus-btns">
+        <button class="btn" data-pathway="${p.id}">Learn</button>
+        <button class="btn ${done ? "" : "primary"}" data-act="focus-test">${done ? "Test Again" : st.ok ? "Continue" : "Test Me"}</button>
+      </div></section>`;
   }
 
   function groupStats(group) {
@@ -323,7 +438,7 @@
 
   function renderTargets() {
     const q = search.trim().toLowerCase();
-    const match = (t) => !q || [t.name, t.short, t.gene, t.family, t.area, ...t.drugs.map((d) => `${d.name} ${d.action} ${d.use}`)].join(" ").toLowerCase().includes(q);
+    const match = (t) => !q || [t.name, t.short, t.gene, t.family, t.area, ...t.drugs.map((d) => `${d.name} ${d.action} ${d.use} ${brandText(d.name)}`)].join(" ").toLowerCase().includes(q);
     const areas = AREAS.filter((a) => filterArea === "All" || a === filterArea);
     let shown = 0;
     const sections = areas.map((a) => {
@@ -344,7 +459,7 @@
     return `${title("Drug Targets", `${T.length} targets across ${AREAS.length} therapeutic areas, chosen from the targets with the most approved drugs (Santos et al., 2017) and today's top-selling medicines.`)}
       <div class="toolbar">
         <div class="search"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.5" cy="8.5" r="6" fill="none" stroke="currentColor" stroke-width="2"/><path d="M13 13l5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-        <input id="search" type="search" placeholder="Search targets, genes, drugs, diseases" value="${esc(search)}" /></div>
+        <input id="search" type="search" placeholder="Search targets, genes, drugs, brands, companies" value="${esc(search)}" /></div>
         <div class="chips scroll">${["All", ...AREAS].map((a) => `<button class="chip ${a === filterArea ? "on" : ""}" data-area="${esc(a)}">${esc(a)}</button>`).join("")}</div>
       </div>
       ${shown ? sections : `<p class="empty-state">No targets match “${esc(search)}”.</p>`}`;
@@ -374,14 +489,17 @@
   }
 
   function renderPathways() {
+    const f = ensureFocus();
     return `${title("Pathways", "Grouped by mechanism class. Learn these and most targets become variations on a theme.")}
+      ${f ? `<button class="focus-strip" data-pathway="${f.pid}"><span class="eyebrow">Today's pathway</span><strong>${esc(pathwayById[f.pid].name)}</strong>${chevron}</button>` : ""}
       ${GROUPS.map((g) => `<section class="group"><h2 class="group-title">${esc(g.name)} <span>${g.ids.length}</span></h2>${g.desc ? `<p class="group-desc">${esc(g.desc)}</p>` : ""}
         <div class="grid">${g.ids.filter((id) => pathwayById[id]).map((id) => {
           const p = pathwayById[id];
           const st = groupStats(`pathway:${p.id}`);
           const n = T.filter((t) => t.pathways.includes(p.id)).length;
+          const tag = f && f.pid === p.id ? `<span class="tag today">Today</span>` : S.focusDone[p.id] ? `<span class="tag">✓ Done</span>` : "";
           return `<button class="tile" data-pathway="${p.id}">
-            <div class="tile-top"><span class="short">${esc(p.name)}</span>${chevron}</div>
+            <div class="tile-top"><span class="short">${esc(p.name)}</span>${tag}${chevron}</div>
             <div class="family">${esc(p.summary)}</div>
             <div class="drug-hint">${n} linked target${n === 1 ? "" : "s"}</div>${bar(st)}</button>`;
         }).join("")}</div></section>`).join("")}`;
@@ -392,10 +510,18 @@
     const linked = T.filter((t) => t.pathways.includes(p.id));
     const ids = [...groupStats(`pathway:${p.id}`).ids, ...linked.map((t) => `t:${t.id}:signal`)];
     const grp = GROUPS.find((g) => g.ids.includes(p.id));
+    const f = ensureFocus();
+    const isFocus = f && f.pid === p.id;
+    const fs = focusStats(p.id);
+    const btns = isFocus
+      ? `<button class="btn primary" data-act="focus-test">${focusDoneToday(f) ? "Test Again" : "Test Me"} · ${fs.total} cards</button>
+         <button class="btn" data-practice-ids="${ids.join(",")}" data-title="${esc(p.name)}">Practice + targets (${ids.length})</button>`
+      : `<button class="btn primary" data-practice-ids="${ids.join(",")}" data-title="${esc(p.name)}">Practice ${ids.length} cards</button>
+         ${S.settings.dailyPathway ? `<button class="btn" data-act="set-focus" data-pid="${p.id}">Make Today's Pathway</button>` : ""}`;
     return `<section class="detail">
       <button class="back-link" data-view="pathways">${chevron}Pathways</button>
-      <header class="detail-head"><div>${grp ? `<p class="eyebrow">${esc(grp.name)}</p>` : ""}<h1>${esc(p.name)}</h1><p class="muted">${fmt(p.summary)}</p></div>
-        <button class="btn primary" data-practice-ids="${ids.join(",")}" data-title="${esc(p.name)}">Practice ${ids.length} cards</button></header>
+      <header class="detail-head"><div>${isFocus ? `<p class="eyebrow">Today's pathway · ${fs.ok} of ${fs.total} comfortable</p>` : grp ? `<p class="eyebrow">${esc(grp.name)}</p>` : ""}<h1>${esc(p.name)}</h1><p class="muted">${fmt(p.summary)}</p></div>
+        <div class="head-btns">${btns}</div></header>
       <div class="panel"><h3>Step by step</h3>${hasDgm(p.id) ? dgm(p.id, { mode: "explore", list: "1" }) : flow(p.steps)}</div>
       <div class="panel"><h3>Drugs acting on this pathway</h3><p>${fmt(p.drugs)}</p></div>
       <div class="panel why"><h3>${fmt(p.question)}</h3><p>${fmt(p.answer)}</p></div>
@@ -492,6 +618,8 @@
       </div>
       <div class="panel"><h3>Settings</h3>
         <label class="setting"><span>New cards per day</span><input id="new-per-day" type="number" min="0" max="200" value="${S.settings.newPerDay}" /></label>
+        <label class="setting"><span>Pathway of the day</span><input id="daily-pathway" type="checkbox" ${S.settings.dailyPathway ? "checked" : ""} /></label>
+        <p class="muted small">${Object.keys(S.focusDone).length} of ${PATHWAY_ORDER.length} pathways completed as a daily pathway. Practice sessions count toward your schedule, and new cards you meet in practice count toward the daily new-card limit.</p>
         <p class="muted small">${total} cards in the deck. At ${S.settings.newPerDay} a day you'll have seen everything in about ${Math.ceil(total / Math.max(1, S.settings.newPerDay))} days. Due reviews: ${c.review + c.learn}.</p>
         <div class="row">
           <button class="btn" data-act="export">Export Progress</button>
@@ -529,6 +657,8 @@
     switch (d.act) {
       case "reveal": return reveal();
       case "end-practice": return endPractice();
+      case "focus-test": { const f = ensureFocus(); if (f) startFocus(f.pid); return; }
+      case "set-focus": setFocus(d.pid); return render();
       case "organ-clear": organSel = null; return render();
       case "back-body": return go("body");
       case "extra-new": S.daily.extraNew += 10; save(); current = null; return render();
@@ -562,6 +692,7 @@
       S.settings.newPerDay = Math.max(0, Math.min(200, Number(e.target.value) || 0));
       save(); current = null; render();
     }
+    if (e.target.id === "daily-pathway") { S.settings.dailyPathway = e.target.checked; save(); render(); }
     if (e.target.id === "import-file" && e.target.files[0]) {
       e.target.files[0].text().then((txt) => {
         try {

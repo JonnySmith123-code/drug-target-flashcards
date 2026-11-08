@@ -197,6 +197,31 @@ table.drugs tr:last-child td { border-bottom: 0; }
 .concept .q { color: var(--text-2); }
 .tick { font-size: 0.75rem; color: var(--text-2); margin-left: auto; padding-left: 1rem; }
 
+
+/* ───────────── Pathway of the day ───────────── */
+.focus { display: flex; align-items: center; justify-content: space-between; gap: 1rem 1.5rem; flex-wrap: wrap; background: var(--tile); border-radius: var(--radius); padding: 1.15rem 1.4rem; margin: -0.5rem 0 1.5rem; }
+.focus-main { flex: 1; min-width: 220px; }
+.focus h2 { margin: 0.15rem 0 0.15rem; font-size: 1.4rem; font-weight: 600; letter-spacing: -0.01em; }
+.focus h2 .ok { color: var(--blue); }
+.focus .muted { margin: 0 0 0.6rem; font-size: 0.88rem; }
+.focus .progress { max-width: 260px; background: #E2E2E7; }
+.focus-btns { display: flex; gap: 0.5rem; }
+.focus-hint { margin: -0.6rem 0 1rem; }
+.focus-strip { display: flex; align-items: center; gap: 0.75rem; width: 100%; text-align: left; background: var(--tile); border: 0; border-radius: 14px; padding: 0.85rem 1.15rem; margin: -0.5rem 0 1.75rem; cursor: pointer; }
+.focus-strip strong { flex: 1; font-weight: 500; }
+.focus-strip:hover { background: var(--tile-hover); }
+.tag { font-size: 0.7rem; font-weight: 500; color: var(--text-2); background: #E6E6EB; border-radius: 980px; padding: 0.1rem 0.5rem; margin-left: auto; white-space: nowrap; }
+.tag.today { color: #fff; background: var(--blue); }
+.head-btns { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.setting input[type=checkbox] { width: 20px; height: 20px; accent-color: var(--blue); }
+
+/* Brand names & companies */
+.brand-sub { display: flex; flex-direction: column; gap: 0.1rem; margin-top: 0.2rem; font-size: 0.8rem; color: var(--text-2); line-height: 1.35; }
+.brand-sub strong { color: var(--text); font-weight: 500; }
+.brand-sub em { font-style: normal; }
+.gen { font-style: normal; font-size: 0.72rem; color: var(--text-3); }
+.front-sub { display: block; margin-top: 0.6rem; font-size: 0.6em; color: var(--text-2); font-weight: 400; }
+
 /* ───────────── Body map ───────────── */
 .body-layout { display: grid; grid-template-columns: minmax(260px, 360px) 1fr; gap: 1rem; align-items: start; }
 .body-figure { position: sticky; top: 80px; margin-top: 0; padding: 1.5rem 1rem; }
@@ -358,5 +383,8 @@ table.drugs tr:last-child td { border-bottom: 0; }
   .body-layout { grid-template-columns: 1fr; }
   .body-figure { position: static; }
   .body-svg { max-height: 58vh; }
+  .focus { padding: 1rem 1.1rem; margin-top: -0.75rem; }
+  .focus-btns { width: 100%; }
+  .focus-btns .btn { flex: 1; justify-content: center; }
   footer { display: none; }
 }

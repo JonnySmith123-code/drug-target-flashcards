@@ -26,7 +26,9 @@ The phone picks up the new version the next time you open the app while online. 
 
 ## How it works
 - **Study**: Anki-style scheduling (SM-2). Rate each card Again / Hard / Good / Easy (keys 1–4, Space = show/Good). New cards arrive in a guided order: concepts → each target with its pathways. The default is 15 new cards a day, which you can change in Progress.
-- **Targets / Pathways / Concepts**: browse reference pages. "Practice" drills a single target or pathway without affecting your schedule.
+- **Practice counts.** "Practice" on a target, pathway, disease or concept page uses the same scheduler as the daily queue. New cards you learn there count toward the daily new-card limit. Passing a review card early confirms it without stretching its interval; failing it counts as a lapse.
+- **Pathway of the day.** The Study screen shows one pathway at a time, in mechanism-group order. Tap Learn to read it, then Test Me. Cards you rate Again or Hard keep coming back until you've rated every card Good or Easy, which means it has graduated in the schedule. Once that's done, the next pathway comes up the following day. An unfinished pathway carries over to the next day. You can pick a pathway yourself ("Make Today's Pathway" on its page) or turn the feature off in Progress.
+- **Brands and companies.** Every drug shows its brand name and the company that markets it, and drug cards ask for them as a bonus. Search on the Targets page also matches brand and company names (e.g. "Keytruda", "Novartis").
 - A card counts as *mastered* once its interval reaches 21 days or more. A target counts as *learned* when 80% or more of its cards are mastered.
 
 ## What's in the deck
@@ -34,7 +36,7 @@ The phone picks up the new version the next time you open the app while online. 
 - **25 signalling pathways**, grouped by mechanism class: GPCR signalling, kinase signalling, inflammation and immunity, gene regulation and cell fate, physiological systems, excitable cells, and infection.
 - **72 diseases on an interactive body map (17 organs).** Tap an organ to see its diseases. Each disease has its pathophysiology, features, diagnosis, treatments linked to their drug targets, a mechanism question, and 4 study cards.
 
-Content files: `js/data/targets*.js`, `js/data/pathways*.js`, `js/data/diagrams*.js`, `js/data/diseases-*.js`. The body map is drawn in `js/bodymap.js`.
+Content files: `js/data/targets*.js`, `js/data/pathways*.js`, `js/data/diagrams*.js`, `js/data/diseases-*.js`, `js/data/brands-*.js` (brand and company keyed by lowercase generic name). The body map is drawn in `js/bodymap.js`.
 
 ## Interactive pathway diagrams
 Every pathway is drawn as a cell diagram (`js/data/diagrams.js`, rendered by `js/diagram.js`).
