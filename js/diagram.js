@@ -296,6 +296,66 @@
     update();
   }
 
+  // ───────── controller for quizzes (js/quiz.js) ─────────
+  // Renders a bare diagram into `host` and lets the caller decide what each node shows.
+  //   state(id) → "blank" | "now" | "past" | "all" | "future"
+  function controller(host, pid) {
+    const D = prep(pid);
+    const P = PATHWAYS[pid];
+    if (!D || !P) return null;
+    host.innerHTML = `<svg class="dgm-svg quiz-svg" viewBox="0 0 ${W} ${D.h}" role="img" aria-label="${esc(P.name)} diagram">
+        <g class="scene">${sceneSVG(D)}</g>
+        <g class="edges">${D.edges.map((e, i) => edgeSVG(D, e, i)).join("")}</g>
+        <g class="nodes">${Object.values(D.nodes).map(nodeSVG).join("")}</g></svg>`;
+    const svg = host.querySelector("svg");
+    const nodeEls = Object.fromEntries([...svg.querySelectorAll("g.n")].map((g) => [g.dataset.n, g]));
+    const edgeEls = [...svg.querySelectorAll("g.e")];
+    let nodeState = () => "all";
+    const api = {
+      D, P, svg,
+      label: (id) => D.nodes[id].l.replace(/\n/g, " "),
+      // Repaint: nodeFn(id) gives each node's state; edges follow their endpoints.
+      paint(nodeFn) {
+        nodeState = nodeFn;
+        Object.entries(nodeEls).forEach(([id, g]) => {
+          const s = nodeFn(id);
+          g.setAttribute("class", `n k-${D.nodes[id].k} ${s === "blank" ? "blank" : s}`);
+        });
+        const rank = { blank: 0, future: 0, past: 1, all: 2, now: 3 };
+        edgeEls.forEach((g) => {
+          const e = D.edges[g.dataset.ei];
+          const a = nodeFn(e.a), b = nodeFn(e.b);
+          const r = Math.min(rank[a] ?? 2, rank[b] ?? 2);
+          const st = r === 0 ? "future" : a === "now" && b === "now" ? "now" : r === 1 ? "past" : "all";
+          g.setAttribute("class", `e${e.inhibit ? " inh" : ""}${e.curved ? " fb" : ""}${e.dashed ? " mv" : ""} ${st}`);
+        });
+      },
+      // Show steps 0..k-1 (k-1 is "now"); everything later is a blank outline.
+      build(k) {
+        const cur = k > 0 ? new Set(D.steps[k - 1]) : new Set();
+        api.paint((id) => (k >= D.N ? "all" : cur.has(id) ? "now" : D.intro[id] < k ? "past" : "blank"));
+      },
+      pulse(ids) {
+        Object.entries(nodeEls).forEach(([id, g]) => g.classList.toggle("hl", ids.includes(id)));
+      },
+      flash(id, ok) {
+        const g = nodeEls[id];
+        if (!g) return;
+        const c = ok ? "ok-flash" : "bad-flash";
+        g.classList.remove(c); void g.getBBox(); g.classList.add(c);
+        setTimeout(() => g.classList.remove(c), 650);
+      },
+      onNode(cb) {
+        svg.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const g = e.target.closest("g.n");
+          if (g) cb(g.dataset.n);
+        });
+      }
+    };
+    return api;
+  }
+
   // Which pathway diagram (and node) shows a given target?
   function forTarget(targetId, preferred) {
     const order = [...(preferred || []), ...Object.keys(DIAGRAMS)];
@@ -306,5 +366,5 @@
     return null;
   }
 
-  window.Diagram = { mountAll, forTarget, has: (pid) => !!DIAGRAMS[pid], prep };
+  window.Diagram = { mountAll, forTarget, has: (pid) => !!DIAGRAMS[pid], prep, controller };
 })();

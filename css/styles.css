@@ -222,6 +222,46 @@ table.drugs tr:last-child td { border-bottom: 0; }
 .gen { font-style: normal; font-size: 0.72rem; color: var(--text-3); }
 .front-sub { display: block; margin-top: 0.6rem; font-size: 0.6em; color: var(--text-2); font-weight: 400; }
 
+
+/* ───────────── Interactive tests (js/quiz.js) ───────────── */
+.quiz { margin-top: 1.4rem; font: 400 1rem/1.45 var(--font); letter-spacing: -0.012em; display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 1.25rem; align-items: start; }
+.quiz:not(:has(.q-dgm)) { grid-template-columns: 1fr; }
+.card.revealed .front .quiz { display: none; }
+.quiz-svg .past { opacity: 0.6; }
+.quiz-card .front { font-size: 1.45rem; }
+.q-dgm { position: sticky; top: 64px; }
+.q-dgm .dgm-svg { max-height: 540px; }
+.q-caption { min-height: 1.5em; font-size: 0.95rem; margin-bottom: 0.75rem; }
+.q-good, .q-ok { color: #1D9A4B; font-weight: 600; }
+.q-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.45rem; }
+.q-step { display: flex; align-items: flex-start; gap: 0.7rem; width: 100%; text-align: left; background: #FFFFFF; border: 1px solid transparent; border-radius: 14px; padding: 0.7rem 0.9rem; font-size: 0.92rem; line-height: 1.38; cursor: pointer; transition: background 0.15s, border-color 0.15s; touch-action: manipulation; }
+button.q-step:hover { border-color: var(--hair); }
+.q-step b { flex: none; width: 1.45rem; height: 1.45rem; border-radius: 50%; border: 1.5px dashed #C7C7CC; display: grid; place-items: center; font-size: 0.75rem; font-weight: 600; margin-top: 0.02rem; }
+.q-step.placed { background: transparent; padding: 0.35rem 0.9rem; color: var(--text); cursor: default; }
+.q-step.placed b { border: 0; background: var(--blue); color: #fff; }
+.q-step.bad { border-color: var(--red); background: #FFF3F3; animation: q-shake 0.4s; }
+.q-step.hint { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.15); }
+@keyframes q-shake { 20%, 60% { transform: translateX(-5px); } 40%, 80% { transform: translateX(5px); } }
+.q-chips { display: flex; flex-wrap: wrap; gap: 0.45rem; }
+.q-chip { background: #FFFFFF; border: 1px solid var(--hair-soft); border-radius: 980px; padding: 0.45rem 0.85rem; font-size: 0.88rem; cursor: pointer; touch-action: manipulation; }
+.q-chip.on { background: var(--blue); border-color: var(--blue); color: #fff; }
+.q-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 0.9rem; min-height: 2rem; }
+.q-score { font-size: 0.82rem; color: var(--red); }
+.q-btn { background: #FFFFFF; border: 0; border-radius: 980px; padding: 0.35rem 0.95rem; font-size: 0.84rem; color: var(--link); cursor: pointer; }
+.quiz.finished .q-btn { visibility: hidden; }
+.dgm-svg g.n.blank text { opacity: 0; }
+.dgm-svg g.n.blank .body { fill: #F5F5F7; stroke-dasharray: 4 3; }
+.dgm-svg g.n.blank .slot { opacity: 0; }
+.dgm-svg g.n.ok-flash .body { fill: #DDF3E3; }
+.dgm-svg g.n.bad-flash .body { fill: #FFDCDC; stroke: var(--red); animation: q-blink 0.6s; }
+@keyframes q-blink { 50% { fill: #FFFFFF; } }
+.q-result { font-size: 0.95rem; font-weight: 600; margin: 0 0 1rem; color: var(--red); }
+.q-result.clean { color: #1D9A4B; }
+.q-result.skipped { color: var(--text-2); font-weight: 400; }
+.q-result span { font-weight: 400; color: var(--text-2); margin-left: 0.4rem; }
+.grade.suggest { box-shadow: inset 0 0 0 2px var(--blue); }
+.btn.skip { color: var(--text-2); }
+
 /* ───────────── Body map ───────────── */
 .body-layout { display: grid; grid-template-columns: minmax(260px, 360px) 1fr; gap: 1rem; align-items: start; }
 .body-figure { position: sticky; top: 80px; margin-top: 0; padding: 1.5rem 1rem; }
@@ -383,6 +423,12 @@ table.drugs tr:last-child td { border-bottom: 0; }
   .body-layout { grid-template-columns: 1fr; }
   .body-figure { position: static; }
   .body-svg { max-height: 58vh; }
+  .quiz { grid-template-columns: 1fr; gap: 0.75rem; margin-left: -0.6rem; margin-right: -0.6rem; }
+  .q-dgm { top: calc(46px + env(safe-area-inset-top)); z-index: 3; background: var(--tile); padding: 0.35rem 0; }
+  .q-dgm .dgm-svg { max-height: 38vh; }
+  .quiz-card .front { font-size: 1.12rem; }
+  .quiz-card { padding-top: 1.25rem; }
+  .q-step { font-size: 0.88rem; padding: 0.6rem 0.75rem; }
   .focus { padding: 1rem 1.1rem; margin-top: -0.75rem; }
   .focus-btns { width: 100%; }
   .focus-btns .btn { flex: 1; justify-content: center; }

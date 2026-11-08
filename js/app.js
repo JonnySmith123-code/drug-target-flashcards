@@ -84,16 +84,21 @@
   function pathwayCards(p) {
     const group = `pathway:${p.id}`;
     add({
-      id: `p:${p.id}:steps`, kind: "Pathway", group, label: p.name,
-      front: `Walk through the <strong>${esc(p.name)}</strong> pathway, step by step.`,
+      id: `p:${p.id}:steps`, kind: "Pathway · build", group, label: p.name, quiz: true,
+      front: `Build the <strong>${esc(p.name)}</strong> pathway. Tap the steps in order.<div class="quiz" data-type="order" data-pid="${p.id}"></div>`,
       back: `<p class="summary">${fmt(p.summary)}</p>${hasDgm(p.id) ? dgm(p.id, { mode: "explore" }) + textSteps(p.steps) : flow(p.steps)}<p class="meta"><span>Drugs acting here</span>${fmt(p.drugs)}</p>`
+    });
+    if (hasDgm(p.id)) add({
+      id: `p:${p.id}:label`, kind: "Pathway · label", group, label: p.name, quiz: true,
+      front: `Label the <strong>${esc(p.name)}</strong> diagram.<div class="quiz" data-type="label" data-pid="${p.id}"></div>`,
+      back: dgm(p.id, { mode: "explore" })
     });
     add({ id: `p:${p.id}:why`, kind: "Pathway · why", group, label: p.name, front: fmt(p.question), back: `<p>${fmt(p.answer)}</p>` });
     const D = hasDgm(p.id) && window.FC_DIAGRAMS[p.id];
     (D && D.drugs ? D.drugs : []).forEach((dr, i) =>
       add({
-        id: `p:${p.id}:where:${slug(dr.d)}`, kind: "Where it acts", group, label: p.name,
-        front: `Where on this pathway does <strong>${esc(dr.d)}</strong> act, and what does it do?${dgm(p.id, { mode: "overview" })}`,
+        id: `p:${p.id}:where:${slug(dr.d)}`, kind: "Where it acts", group, label: p.name, quiz: true,
+        front: `Where does <strong>${esc(dr.d)}</strong> act on this pathway? Tap it.<div class="quiz" data-type="where" data-pid="${p.id}" data-drug="${i}"></div>`,
         back: dgm(p.id, { mode: "drug", drug: i })
       })
     );
@@ -112,8 +117,8 @@
       back: `<dl class="facts"><dt>Class</dt><dd>${fmt(t.family)}</dd><dt>Where</dt><dd>${fmt(t.location)}</dd><dt>Normal role</dt><dd>${fmt(t.role)}</dd></dl>`
     });
     add({
-      id: `t:${t.id}:signal`, kind: "Signalling", group, label,
-      front: `Walk through the signalling at <strong>${esc(t.short)}</strong>, from ligand to effect.`,
+      id: `t:${t.id}:signal`, kind: "Signalling", group, label, quiz: t.signalling.length > 1,
+      front: `Put the signalling at <strong>${esc(t.short)}</strong> in order, from ligand to effect.<div class="quiz" data-type="order" data-tid="${t.id}"></div>`,
       back: flow(t.signalling) + targetDiagram(t)
     });
     add({
@@ -270,6 +275,7 @@
   let current = null;
   let revealed = false;
   let practice = null;
+  let quizResult = null;   // { mistakes, total } from the current card's interactive test
   let view = "study";
   let viewArg = null;
   let filterArea = "All";
@@ -311,6 +317,7 @@
     }
     current = null;
     revealed = false;
+    quizResult = null;
     render();
     window.scrollTo(0, 0);
   }
@@ -318,14 +325,14 @@
   function startPractice(title, ids, focus = null) {
     ids = ids.filter((id) => cardById[id]);
     practice = { title, focus, queue: focus ? ids : [...ids].sort(() => Math.random() - 0.5), total: ids.length, done: 0 };
-    current = null; revealed = false;
+    current = null; revealed = false; quizResult = null;
     go("study");
   }
   function startFocus(pid) {
     if (!S.focus || S.focus.pid !== pid) setFocus(pid);
     startPractice(pathwayById[pid].name, focusIds(pid), pid);
   }
-  function endPractice() { practice = null; current = null; revealed = false; render(); }
+  function endPractice() { practice = null; current = null; revealed = false; quizResult = null; render(); }
 
   // ───────────── rendering ─────────────
   const PARENT = { target: "targets", pathway: "pathways", disease: "body" };
@@ -340,6 +347,7 @@
     };
     main.innerHTML = (views[view] || renderStudy)();
     if (window.Diagram) Diagram.mountAll(main);
+    if (window.Quiz) Quiz.mountAll(main);
     updateBadge();
   }
   function updateBadge() {
@@ -349,19 +357,34 @@
   }
   const title = (t, sub = "") => `<header class="page-head"><h1>${t}</h1>${sub ? `<p>${sub}</p>` : ""}</header>`;
 
+  // Suggested rating from an interactive test: clean → Good, a few slips → Hard, many → Again.
+  function suggestGrade(r) {
+    if (!r) return 0;
+    if (r.mistakes === 0) return 3;
+    return r.mistakes <= Math.max(2, Math.round(r.total * 0.25)) ? 2 : 1;
+  }
   function renderCard(card, gradeLabels) {
     const typeClass = slug(card.kind.split(" ")[0]);
+    const quiz = card.quiz && !revealed;
+    const sug = revealed && card.quiz ? suggestGrade(quizResult) : 0;
+    const result = revealed && card.quiz
+      ? quizResult
+        ? `<p class="q-result ${quizResult.mistakes ? "" : "clean"}">${quizResult.mistakes ? `Finished with ${quizResult.mistakes} mistake${quizResult.mistakes === 1 ? "" : "s"}.` : "Perfect, no mistakes."} <span>Suggested: ${["", "Again", "Hard", "Good", "Easy"][sug]}</span></p>`
+        : `<p class="q-result skipped">Skipped. Rate how well you knew it.</p>`
+      : "";
     return `
-      <article class="card ${revealed ? "revealed" : "tappable"}" ${revealed ? "" : 'data-act="reveal"'}>
+      <article class="card ${revealed ? "revealed" : quiz ? "quiz-card" : "tappable"}" ${revealed || quiz ? "" : 'data-act="reveal"'}>
         <div class="card-meta"><span class="kind kind-${typeClass}">${esc(card.kind)}</span><span class="label">${esc(card.label)}</span></div>
         <div class="front">${card.front}</div>
-        ${revealed ? `<div class="divider"></div><div class="back">${card.back}</div>` : `<p class="tap-hint">Tap to reveal</p>`}
+        ${revealed ? `<div class="divider"></div>${result}<div class="back">${card.back}</div>` : quiz ? "" : `<p class="tap-hint">Tap to reveal</p>`}
       </article>
       <div class="actions">
         ${!revealed
-          ? `<button class="btn primary wide" data-act="reveal">Show Answer <kbd class="desk">Space</kbd></button>`
+          ? quiz
+            ? `<button class="btn wide skip" data-act="reveal">Skip and Show Answer</button>`
+            : `<button class="btn primary wide" data-act="reveal">Show Answer <kbd class="desk">Space</kbd></button>`
           : `<div class="grades">${[[1, "Again"], [2, "Hard"], [3, "Good"], [4, "Easy"]].map(([r, l]) =>
-              `<button class="grade g${r}" data-grade="${r}"><span>${l}</span><small>${gradeLabels ? gradeLabels[r] : ""}</small></button>`).join("")}</div>`}
+              `<button class="grade g${r}${r === sug ? " suggest" : ""}" data-grade="${r}"><span>${l}</span><small>${gradeLabels ? gradeLabels[r] : ""}</small></button>`).join("")}</div>`}
       </div>`;
   }
 
@@ -673,9 +696,19 @@
     const g = e.target.closest && e.target.closest("[data-organ]");
     if (g && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); g.dispatchEvent(new MouseEvent("click", { bubbles: true })); return; }
     if (view !== "study" || e.target.matches("input, textarea") || e.metaKey || e.ctrlKey) return;
-    if (!revealed && (e.code === "Space" || e.key === "Enter")) { e.preventDefault(); reveal(); }
+    if (!revealed && (e.code === "Space" || e.key === "Enter")) { e.preventDefault(); if (!(current && current.quiz)) reveal(); }
     else if (revealed && ["1", "2", "3", "4"].includes(e.key)) { e.preventDefault(); gradeCard(Number(e.key)); }
     else if (revealed && (e.code === "Space" || e.key === "Enter")) { e.preventDefault(); gradeCard(3); }
+  });
+
+  // An interactive test finished: reveal the answer with the result and a suggested rating.
+  document.addEventListener("quizdone", (e) => {
+    if (!current || revealed || view !== "study") return;
+    quizResult = e.detail;
+    revealed = true;
+    render();
+    const r = document.querySelector(".q-result");
+    if (r) r.scrollIntoView({ block: "start", behavior: "smooth" });
   });
 
   document.addEventListener("input", (e) => {
